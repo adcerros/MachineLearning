@@ -330,4 +330,4 @@ class BasicAgentAA(BustersAgent):
     #         openList.append(currentNewState)
 
     def printLineData(self, gameState):
-        return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getNumAgents()))
+        return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  gameState.getLivingGhosts())
