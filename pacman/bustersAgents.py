@@ -243,8 +243,8 @@ class BasicAgentAA(BustersAgent):
         print("Width: ", width, " Height: ", height)
         # Pacman position
         print("Pacman position: ", gameState.getPacmanPosition())
-        # Legal actions for Pacman in current position
-        print("Legal actions: ", gameState.getLegalPacmanActions())
+        # Legal newStates for Pacman in currentState position
+        print("Legal newStates: ", gameState.getLegalPacmanActions())
         # Pacman direction
         print("Pacman direction: ", gameState.data.agentStates[0].getDirection())
         # Number of ghosts
@@ -273,73 +273,61 @@ class BasicAgentAA(BustersAgent):
         self.printInfo(gameState)
         livingGhosts = gameState.getLivingGhosts()
         ghostsPositions = gameState.getGhostPositions()
+        nearlyGhostPos = self.getNearlyGhostPos(gameState, livingGhosts, ghostsPositions)
+        return self.searchBFS(gameState, nearlyGhostPos)
+
+    def getNearlyGhostPos(self, gameState, livingGhosts, ghostsPositions):
         # nealyGhost = [manhattanDistance, ghostNumber]
         nearlyGhost = [1000, 0]
         for i in range(len(gameState.data.ghostDistances)):
-            if (livingGhosts[i + 1]):
-                if (gameState.data.ghostDistances[i] < nearlyGhost[0]):
+            if livingGhosts[i + 1]:
+                if gameState.data.ghostDistances[i] < nearlyGhost[0]:
                     nearlyGhost = [gameState.data.ghostDistances[i], i]
         nextGhost = [ghostsPositions[nearlyGhost[1]]]
-        return self.searchBFS(gameState, nextGhost[0])
+        return nextGhost[0]
        
 
-
-    def searchBFS(self, gameState, nearlyGhost):
+    def searchBFS(self, gameState, nearlyGhostPos):
         openList = []
         closedList = []
         pacmanPosition = gameState.getPacmanPosition()
-        initial = [pacmanPosition, [], [], 100]
+        walls = gameState.getWalls()
+        initial = [pacmanPosition, []]
         openList.append(initial)
-        while ((len(openList) > 0)):
-            if(openList[0][0] == nearlyGhost):
-                return openList[0][2][0]
+        while len(openList) > 0:
+            currentState = openList.pop(0)
+            if currentState[0] == nearlyGhostPos:
+                return currentState[1][0]
             else:
-                current = openList.pop(0)
-                currentX = current[0][0]
-                currentY = current[0][1]
-                current[1].append(current[0])
-                actions = []
-                actions.append([(currentX, currentY + 1), copy.deepcopy(current[1]), copy.deepcopy(current[2]) + [Directions.NORTH]])
-                actions.append([(currentX, currentY - 1), copy.deepcopy(current[1]), copy.deepcopy(current[2]) + [Directions.SOUTH]])
-                actions.append([(currentX - 1, currentY), copy.deepcopy(current[1]), copy.deepcopy(current[2]) + [Directions.WEST]])
-                actions.append([(currentX + 1, currentY), copy.deepcopy(current[1]), copy.deepcopy(current[2]) + [Directions.EAST]])
-                walls = gameState.getWalls()
-                closedList.append(current[0])
-                numberOfActions = len(actions)
-                # BUSQUEDA EN AMPLITUD
-                for i in range(numberOfActions):
-                    if walls[actions[0][0][0]][actions[0][0][1]] == True:
-                        actions.pop(0)
-                    else:
-                        actions.append(actions.pop(0))
-                while (len(actions) > 0):
-                    if(actions[0] not in openList and actions[0][0] not in closedList):
-                        openList.append(actions.pop(0))
-                    else:
-                        actions.pop(0)
-                        
-                # BUSQUEDA HEURISTICA
-                # for i in range(numberOfActions):
-                #     if walls[actions[0][0][0]][actions[0][0][1]] == True:
-                #         actions.pop(0)
-                #     else:
-                #         actions.append(actions.pop(0))
-                # while (len(actions) > 0):
-                #     if(actions[0] not in openList and actions[0][0] not in closedList):
-                #         currentAction = actions.pop(0)
-                #         heuristic = (abs(nearlyGhost[0] - currentAction[0][0]) + abs(nearlyGhost[1] - currentAction[0][1]) + len(currentAction[2]))
-                #         currentAction.append(heuristic)
-                #         inserted = False
-                #         for i in range(len(openList)):
-                #             if (heuristic <= openList[i][3]):
-                #                 openList.insert(i, currentAction)
-                #                 inserted = True
-                #         if (inserted == False):
-                #             openList.append(currentAction)
-                #     else:
-                #         actions.pop(0)
+                self.expandStates(walls, openList, closedList, currentState)
+                closedList.append(currentState)
         print("No solution problem !!!!")
         return Directions.STOP
+
+    def expandStates(self, walls, openList, closedList, currentState):
+        newStates = []
+        numberOfNewStates = 4
+        newStates.append([(currentState[0][0], currentState[0][1] + 1), copy.copy(currentState[1]) + [Directions.NORTH]])
+        newStates.append([(currentState[0][0], currentState[0][1] - 1), copy.copy(currentState[1]) + [Directions.SOUTH]])
+        newStates.append([(currentState[0][0] - 1, currentState[0][1]), copy.copy(currentState[1]) + [Directions.WEST]])
+        newStates.append([(currentState[0][0] + 1, currentState[0][1]), copy.copy(currentState[1]) + [Directions.EAST]])
+        for i in range(numberOfNewStates):
+            currentNewState = newStates.pop(0)
+            if walls[currentNewState[0][0]][currentNewState[0][1]] == False and currentNewState not in openList and currentNewState not in closedList:
+                openList.append(currentNewState)
+
+
+    # Version con heuristica
+    # def insertNewState(self, nearlyGhostPos, openList, currentNewState):
+    #     funcG = (abs(nearlyGhostPos[0] - currentNewState[0][0]) + abs(nearlyGhostPos[1] - currentNewState[0][1]))
+    #     currentNewState.append(funcG)
+    #     inserted = False
+    #     for j in range(len(openList)):
+    #         if (funcG <= openList[j][2]):
+    #             openList.insert(j, currentNewState)
+    #             inserted = True
+    #     if inserted == False:
+    #         openList.append(currentNewState)
 
     def printLineData(self, gameState):
         return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getNumAgents()))

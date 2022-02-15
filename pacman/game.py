@@ -628,6 +628,7 @@ class Game(object):
             if 'printLineData' in dir( agent ):
                 importantInformationFile = open("importantInformation.txt","a")
                 importantInformationFile.write(agent.printLineData(self.state) + "\n")
+                importantInformationFile.close()
             #  ////////////////////////////////////////////////////////
             
             if 'observationFunction' in dir( agent ):
