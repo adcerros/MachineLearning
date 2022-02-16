@@ -88,6 +88,7 @@ class BustersAgent(object):
         self.ghostBeliefs = [inf.getBeliefDistribution() for inf in self.inferenceModules]
         self.firstMove = True
 
+
     def observationFunction(self, gameState):
         "Removes the ghost states from the gameState"
         agents = gameState.data.agentStates
@@ -330,4 +331,4 @@ class BasicAgentAA(BustersAgent):
     #         openList.append(currentNewState)
 
     def printLineData(self, gameState):
-        return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  gameState.getLivingGhosts())
+        return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getLivingGhosts()))
