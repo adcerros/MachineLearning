@@ -340,6 +340,7 @@ class BasicAgentAA(BustersAgent):
         newStates.append([(currentState[0][0] + 1, currentState[0][1]), copy.deepcopy(currentState[1]) + [Directions.EAST]])
         for i in range(self.POSSIBLE_ACTIONS_NUM):
             currentNewState = newStates.pop(0)
+            # Si el nuevo estado no se encuentra repetido
             if walls[currentNewState[0][0]][currentNewState[0][1]] == False and currentNewState not in openList and currentNewState[0] not in closedList:
                 self.insertNewState(openList, currentNewState)
 
@@ -354,6 +355,6 @@ class BasicAgentAA(BustersAgent):
                 return
         openList.append(currentNewState)
 
-
+    # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
     def printLineData(self, gameState):
-        return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getLivingGhosts()))
+        return str(gameState.getPacmanPosition()) + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getLivingGhosts())
