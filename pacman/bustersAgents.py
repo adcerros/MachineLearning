@@ -211,6 +211,11 @@ class GreedyBustersAgent(BustersAgent):
         return Directions.EAST
 
 class BasicAgentAA(BustersAgent):
+    followingBFS = False
+    currentBFS = []
+    POSSIBLE_ACTIONS_NUM = 4
+    currentNearlyGhostIndex = None
+    nearlyGhostPos = None
 
     def registerInitialState(self, gameState):
         BustersAgent.registerInitialState(self, gameState)
@@ -273,62 +278,100 @@ class BasicAgentAA(BustersAgent):
         self.countActions = self.countActions + 1
         self.printInfo(gameState)
         livingGhosts = gameState.getLivingGhosts()
-        ghostsPositions = gameState.getGhostPositions()
-        nearlyGhostPos = self.getNearlyGhostPos(gameState, livingGhosts, ghostsPositions)
-        return self.searchBFS(gameState, nearlyGhostPos)
+        print(self.currentBFS)
+        if self.currentNearlyGhostIndex != None: 
+            if len(self.currentBFS) < 1 or livingGhosts[self.currentNearlyGhostIndex + 1] == False:
+                self.currentNearlyGhostIndex = None
+                self.followingBFS = False
+        if self.currentNearlyGhostIndex == None:
+            self.getNearlyGhostPos(gameState)
+        if self.followingBFS == False:
+            return self.getNextMove(gameState)
+        if self.followingBFS == True:
+            return self.currentBFS.pop(0)
 
-    def getNearlyGhostPos(self, gameState, livingGhosts, ghostsPositions):
+
+
+    def getNearlyGhostPos(self, gameState):
         # nealyGhost = [manhattanDistance, ghostNumber]
         nearlyGhost = [1000, 0]
+        livingGhosts = gameState.getLivingGhosts()
         for i in range(len(gameState.data.ghostDistances)):
-            if livingGhosts[i + 1]:
+            if livingGhosts[i + 1] and gameState.data.ghostDistances[i] != None :
                 if gameState.data.ghostDistances[i] < nearlyGhost[0]:
                     nearlyGhost = [gameState.data.ghostDistances[i], i]
-        nextGhost = [ghostsPositions[nearlyGhost[1]]]
-        return nextGhost[0]
+        self.currentNearlyGhostIndex = nearlyGhost[1]
        
+    def getNextMove(self, gameState):
+        nextMoves = []
+        pacmanPosition = gameState.getPacmanPosition()
+        ghostsPositions = gameState.getGhostPositions()
+        self.nearlyGhostPos = ghostsPositions[self.currentNearlyGhostIndex]
+        walls = gameState.getWalls()
+        # nextMove = [nextPosition, distanceToTarget, action]
+        nextMoves.append([(pacmanPosition[0] + 1, pacmanPosition[1]), (abs(self.nearlyGhostPos[0] - (pacmanPosition[0] + 1)) + abs(self.nearlyGhostPos[1] - pacmanPosition[1])), Directions.EAST])
+        nextMoves.append([(pacmanPosition[0] - 1, pacmanPosition[1]), (abs(self.nearlyGhostPos[0] - (pacmanPosition[0] - 1)) + abs(self.nearlyGhostPos[1] - pacmanPosition[1])),  Directions.WEST])
+        nextMoves.append([(pacmanPosition[0], pacmanPosition[1] + 1), (abs(self.nearlyGhostPos[0] - pacmanPosition[0]) + abs(self.nearlyGhostPos[1] - (pacmanPosition[1] + 1))), Directions.NORTH])
+        nextMoves.append([(pacmanPosition[0], pacmanPosition[1] - 1), (abs(self.nearlyGhostPos[0] - pacmanPosition[0]) + abs(self.nearlyGhostPos[1] - (pacmanPosition[1] - 1))), Directions.SOUTH])
+        bestMove = None
+        bestDistance = 10000
+        for i in range(len(nextMoves)):
+            if nextMoves[i][1] < bestDistance:
+                bestDistance = nextMoves[i][1]
+                bestMove = nextMoves[i]
+        if  walls[bestMove[0][0]][bestMove[0][1]] == False:
+            print("NOOOOOO Esta en BFS")
+            return bestMove[2]
+        else:
+            print("Esta en BFS")
+            return self.searchBFS(gameState)
 
-    def searchBFS(self, gameState, nearlyGhostPos):
+
+    def searchBFS(self, gameState):
         openList = []
         closedList = []
         pacmanPosition = gameState.getPacmanPosition()
         walls = gameState.getWalls()
-        initial = [pacmanPosition, []]
+        initial = [pacmanPosition, [], 100]
         openList.append(initial)
         while len(openList) > 0:
             currentState = openList.pop(0)
-            if currentState[0] == nearlyGhostPos:
-                return currentState[1][0]
+            print(currentState)
+            print("\n")
+            if currentState[0] == self.nearlyGhostPos:
+                self.currentBFS = currentState[1]
+                self.followingBFS = True
+                return self.currentBFS.pop(0)
             else:
                 self.expandStates(walls, openList, closedList, currentState)
-                closedList.append(currentState)
+                closedList.append(currentState[0])
         print("No solution problem !!!!")
         return Directions.STOP
 
     def expandStates(self, walls, openList, closedList, currentState):
         newStates = []
-        numberOfNewStates = 4
-        newStates.append([(currentState[0][0], currentState[0][1] + 1), copy.copy(currentState[1]) + [Directions.NORTH]])
-        newStates.append([(currentState[0][0], currentState[0][1] - 1), copy.copy(currentState[1]) + [Directions.SOUTH]])
-        newStates.append([(currentState[0][0] - 1, currentState[0][1]), copy.copy(currentState[1]) + [Directions.WEST]])
-        newStates.append([(currentState[0][0] + 1, currentState[0][1]), copy.copy(currentState[1]) + [Directions.EAST]])
-        for i in range(numberOfNewStates):
+        newStates.append([(currentState[0][0], currentState[0][1] + 1), copy.deepcopy(currentState[1]) + [Directions.NORTH]])
+        newStates.append([(currentState[0][0], currentState[0][1] - 1), copy.deepcopy(currentState[1]) + [Directions.SOUTH]])
+        newStates.append([(currentState[0][0] - 1, currentState[0][1]), copy.deepcopy(currentState[1]) + [Directions.WEST]])
+        newStates.append([(currentState[0][0] + 1, currentState[0][1]), copy.deepcopy(currentState[1]) + [Directions.EAST]])
+        for i in range(self.POSSIBLE_ACTIONS_NUM):
             currentNewState = newStates.pop(0)
-            if walls[currentNewState[0][0]][currentNewState[0][1]] == False and currentNewState not in openList and currentNewState not in closedList:
-                openList.append(currentNewState)
+            if walls[currentNewState[0][0]][currentNewState[0][1]] == False and currentNewState not in openList and currentNewState[0] not in closedList:
+                self.insertNewState(openList, currentNewState)
+                #BFS
+                #openList.append(currentNewState)
 
 
-    # Version con heuristica
-    # def insertNewState(self, nearlyGhostPos, openList, currentNewState):
-    #     funcG = (abs(nearlyGhostPos[0] - currentNewState[0][0]) + abs(nearlyGhostPos[1] - currentNewState[0][1]))
-    #     currentNewState.append(funcG)
-    #     inserted = False
-    #     for j in range(len(openList)):
-    #         if (funcG <= openList[j][2]):
-    #             openList.insert(j, currentNewState)
-    #             inserted = True
-    #     if inserted == False:
-    #         openList.append(currentNewState)
+    #Version con heuristica
+    def insertNewState(self, openList, currentNewState):
+        funcG = (abs(self.nearlyGhostPos[0] - currentNewState[0][0]) + abs(self.nearlyGhostPos[1] - currentNewState[0][1]) + len(currentNewState[1]))
+        currentNewState.append(funcG)
+        for j in range(len(openList)):
+            if (funcG <= openList[j][2]):
+                openList.insert(j, currentNewState)
+                return
+        openList.append(currentNewState)
+
 
     def printLineData(self, gameState):
         return (str(gameState.getPacmanPosition()) + ", " +  str(self.countFood(gameState))  + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getLivingGhosts()))
