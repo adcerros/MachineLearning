@@ -211,8 +211,8 @@ class GreedyBustersAgent(BustersAgent):
         return Directions.EAST
 
 class BasicAgentAA(BustersAgent):
-    followingBFS = False
-    currentBFS = []
+    followingAstar = False
+    currentAstar = []
     POSSIBLE_ACTIONS_NUM = 4
     currentNearlyGhostIndex = None
     nearlyGhostPos = None
@@ -273,25 +273,26 @@ class BasicAgentAA(BustersAgent):
         # Score
         print("Score: ", gameState.getScore())
         
-        
+    # Establece el objetivo mas cercano y crea un camino optimo mediante A*
+    # El camino calculado se sigue hasta alcanzar la posición indicada
+    # Una vez alcanzado el estado final evalua si debe establecer un nuevo objetivo 
     def chooseAction(self, gameState):
         self.countActions = self.countActions + 1
         self.printInfo(gameState)
         livingGhosts = gameState.getLivingGhosts()
-        print(self.currentBFS)
+        # Se comprueba si el pacman se ha comido al fantasma objetivo o se ha llegado al final del camino establecido por A*
         if self.currentNearlyGhostIndex != None: 
-            if len(self.currentBFS) < 1 or livingGhosts[self.currentNearlyGhostIndex + 1] == False:
+            if len(self.currentAstar) < 1 or livingGhosts[self.currentNearlyGhostIndex + 1] == False:
                 self.currentNearlyGhostIndex = None
-                self.followingBFS = False
-        if self.currentNearlyGhostIndex == None:
-            self.getNearlyGhostPos(gameState)
-        if self.followingBFS == False:
+                self.followingAstar = False
+        # Si no se esta siguiendo un objetivo se calcula un camino al mismo
+        if self.followingAstar == False:
             return self.getNextMove(gameState)
-        if self.followingBFS == True:
-            return self.currentBFS.pop(0)
+        # Si se esta siguiendo un camino se continua
+        if self.followingAstar == True:
+            return self.currentAstar.pop(0)
 
-
-
+    # Establece el objetivo mas cercano a la posicion del pacman en el momento de la llamada
     def getNearlyGhostPos(self, gameState):
         # nealyGhost = [manhattanDistance, ghostNumber]
         nearlyGhost = [1000, 0]
@@ -301,53 +302,38 @@ class BasicAgentAA(BustersAgent):
                 if gameState.data.ghostDistances[i] < nearlyGhost[0]:
                     nearlyGhost = [gameState.data.ghostDistances[i], i]
         self.currentNearlyGhostIndex = nearlyGhost[1]
-       
-    def getNextMove(self, gameState):
-        nextMoves = []
-        pacmanPosition = gameState.getPacmanPosition()
         ghostsPositions = gameState.getGhostPositions()
         self.nearlyGhostPos = ghostsPositions[self.currentNearlyGhostIndex]
-        walls = gameState.getWalls()
-        # nextMove = [nextPosition, distanceToTarget, action]
-        nextMoves.append([(pacmanPosition[0] + 1, pacmanPosition[1]), (abs(self.nearlyGhostPos[0] - (pacmanPosition[0] + 1)) + abs(self.nearlyGhostPos[1] - pacmanPosition[1])), Directions.EAST])
-        nextMoves.append([(pacmanPosition[0] - 1, pacmanPosition[1]), (abs(self.nearlyGhostPos[0] - (pacmanPosition[0] - 1)) + abs(self.nearlyGhostPos[1] - pacmanPosition[1])),  Directions.WEST])
-        nextMoves.append([(pacmanPosition[0], pacmanPosition[1] + 1), (abs(self.nearlyGhostPos[0] - pacmanPosition[0]) + abs(self.nearlyGhostPos[1] - (pacmanPosition[1] + 1))), Directions.NORTH])
-        nextMoves.append([(pacmanPosition[0], pacmanPosition[1] - 1), (abs(self.nearlyGhostPos[0] - pacmanPosition[0]) + abs(self.nearlyGhostPos[1] - (pacmanPosition[1] - 1))), Directions.SOUTH])
-        bestMove = None
-        bestDistance = 10000
-        for i in range(len(nextMoves)):
-            if nextMoves[i][1] < bestDistance:
-                bestDistance = nextMoves[i][1]
-                bestMove = nextMoves[i]
-        if  walls[bestMove[0][0]][bestMove[0][1]] == False:
-            print("NOOOOOO Esta en BFS")
-            return bestMove[2]
-        else:
-            print("Esta en BFS")
-            return self.searchBFS(gameState)
+
+    #Establece el objetivo mas cercano y obtiene un camino optimo al mismo mediante A*   
+    def getNextMove(self, gameState):
+        self.getNearlyGhostPos(gameState)
+        return self.searchAstar(gameState)
 
 
-    def searchBFS(self, gameState):
+    def searchAstar(self, gameState):
+        # Inicializacion de A*
         openList = []
         closedList = []
         pacmanPosition = gameState.getPacmanPosition()
         walls = gameState.getWalls()
         initial = [pacmanPosition, [], 100]
         openList.append(initial)
+        print(self.nearlyGhostPos)
         while len(openList) > 0:
             currentState = openList.pop(0)
-            print(currentState)
-            print("\n")
             if currentState[0] == self.nearlyGhostPos:
-                self.currentBFS = currentState[1]
-                self.followingBFS = True
-                return self.currentBFS.pop(0)
+                self.currentAstar = currentState[1]
+                self.followingAstar = True
+                print(self.currentAstar)
+                return self.currentAstar.pop(0)
             else:
                 self.expandStates(walls, openList, closedList, currentState)
                 closedList.append(currentState[0])
         print("No solution problem !!!!")
         return Directions.STOP
 
+    # Se generan las posibles acciones y los nuevos estados
     def expandStates(self, walls, openList, closedList, currentState):
         newStates = []
         newStates.append([(currentState[0][0], currentState[0][1] + 1), copy.deepcopy(currentState[1]) + [Directions.NORTH]])
@@ -358,12 +344,10 @@ class BasicAgentAA(BustersAgent):
             currentNewState = newStates.pop(0)
             if walls[currentNewState[0][0]][currentNewState[0][1]] == False and currentNewState not in openList and currentNewState[0] not in closedList:
                 self.insertNewState(openList, currentNewState)
-                #BFS
-                #openList.append(currentNewState)
 
-
-    #Version con heuristica
+    # Se inserta el nuevo estado en la lista abierta en orden segun el valor de su funcion G
     def insertNewState(self, openList, currentNewState):
+        # funcG = g(x) + h(x) donde el coste es el numero de pasos del camino y la funcion heuristica se basa en la distancia de Manhattan
         funcG = (abs(self.nearlyGhostPos[0] - currentNewState[0][0]) + abs(self.nearlyGhostPos[1] - currentNewState[0][1]) + len(currentNewState[1]))
         currentNewState.append(funcG)
         for j in range(len(openList)):
