@@ -319,13 +319,11 @@ class BasicAgentAA(BustersAgent):
         walls = gameState.getWalls()
         initial = [pacmanPosition, [], 100]
         openList.append(initial)
-        print(self.nearlyGhostPos)
         while len(openList) > 0:
             currentState = openList.pop(0)
             if currentState[0] == self.nearlyGhostPos:
                 self.currentAstar = currentState[1]
                 self.followingAstar = True
-                print(self.currentAstar)
                 return self.currentAstar.pop(0)
             else:
                 self.expandStates(walls, openList, closedList, currentState)
