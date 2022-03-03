@@ -272,7 +272,7 @@ class BasicAgentAA(BustersAgent):
         print( gameState.getWalls())
         # Score
         print("Score: ", gameState.getScore())
-        
+         
     # Establece el objetivo mas cercano y crea un camino optimo mediante A*
     # El camino calculado se sigue hasta alcanzar la posición indicada
     # Una vez alcanzado el estado final evalua si debe establecer un nuevo objetivo 
