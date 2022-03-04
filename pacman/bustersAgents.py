@@ -113,6 +113,7 @@ class BustersAgent(object):
 
 class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
     "An agent controlled by the keyboard that displays beliefs about ghost positions."
+    currentAction = "Stop"
 
     def __init__(self, index = 0, inference = "KeyboardInference", ghostAgents = None):
         KeyboardAgent.__init__(self, index)
@@ -122,7 +123,54 @@ class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
         return BustersAgent.getAction(self, gameState)
 
     def chooseAction(self, gameState):
+        self.currentAction = KeyboardAgent.getAction(self, gameState)
         return KeyboardAgent.getAction(self, gameState)
+    
+    # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
+    def printLineData(self, gameState):
+        pacmanPosition = gameState.getPacmanPosition()
+        ghostPositions = gameState.getGhostPositions()
+        livingGhost = gameState.getLivingGhosts()
+        legalActions = gameState.getLegalPacmanActions()
+        ghostDirections = gameState.getGhostDirections()
+        ghostDistances = gameState.data.ghostDistances
+        ghost1Distance = 1000
+        ghost2Distance = 1000
+        ghost3Distance = 1000
+        ghost4Distance = 1000
+        legalNorth = 0
+        legalSouth = 0
+        legalWest = 0
+        legalEast = 0
+        if 'North' in legalActions:
+            legalNorth = 1
+        if 'South' in legalActions:
+            legalSouth = 1
+        if 'West' in legalActions:
+            legalWest = 1
+        if 'East' in legalActions:
+            legalEast = 1
+        if ghostDistances[0] != None:
+            ghost1Distance = ghostDistances[0]
+        if ghostDistances[1] != None:
+            ghost2Distance = ghostDistances[1]
+        if ghostDistances[2] != None:
+            ghost3Distance = ghostDistances[2]
+        if ghostDistances[3] != None:
+            ghost4Distance = ghostDistances[3]
+        return  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
+                str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
+                str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
+                str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
+                str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
+                str(legalNorth) + ", " + str(legalSouth) + ", " + \
+                str(legalWest) + ", " + str(legalEast) + ", " + \
+                str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
+                str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
+                str(ghost1Distance) + ", " + str(ghost2Distance) + ", " + \
+                str(ghost3Distance) + ", " + str(ghost4Distance) + ", " + \
+                str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
+                str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentAction)
 
 from distanceCalculator import Distancer
 from game import Actions
@@ -165,7 +213,8 @@ class RandomPAgent(BustersAgent):
         if   ( move_random == 2 ) and Directions.NORTH in legal:   move = Directions.NORTH
         if   ( move_random == 3 ) and Directions.SOUTH in legal: move = Directions.SOUTH
         return move
-        
+    
+    
 class GreedyBustersAgent(BustersAgent):
     "An agent that charges the closest ghost."
 
@@ -216,6 +265,7 @@ class BasicAgentAA(BustersAgent):
     POSSIBLE_ACTIONS_NUM = 4
     currentNearlyGhostIndex = None
     nearlyGhostPos = None
+    currentMove = "Stop"
 
     def registerInitialState(self, gameState):
         BustersAgent.registerInitialState(self, gameState)
@@ -290,6 +340,7 @@ class BasicAgentAA(BustersAgent):
             return self.getNextMove(gameState)
         # Si se esta siguiendo un camino se continua
         if self.followingAstar == True:
+            self.currentMove = self.currentAstar[0]
             return self.currentAstar.pop(0)
 
     # Establece el objetivo mas cercano a la posicion del pacman en el momento de la llamada
@@ -324,6 +375,7 @@ class BasicAgentAA(BustersAgent):
             if currentState[0] == self.nearlyGhostPos:
                 self.currentAstar = currentState[1]
                 self.followingAstar = True
+                self.currentMove = self.currentAstar[0]
                 return self.currentAstar.pop(0)
             else:
                 self.expandStates(walls, openList, closedList, currentState)
@@ -357,4 +409,47 @@ class BasicAgentAA(BustersAgent):
 
     # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
     def printLineData(self, gameState):
-        return str(gameState.getPacmanPosition()) + ", " +  str(gameState.getGhostPositions()) + ", " +  str(gameState.getLivingGhosts())
+        pacmanPosition = gameState.getPacmanPosition()
+        ghostPositions = gameState.getGhostPositions()
+        livingGhost = gameState.getLivingGhosts()
+        legalActions = gameState.getLegalPacmanActions()
+        ghostDirections = gameState.getGhostDirections()
+        ghostDistances = gameState.data.ghostDistances
+        ghost1Distance = 1000
+        ghost2Distance = 1000
+        ghost3Distance = 1000
+        ghost4Distance = 1000
+        legalNorth = 0
+        legalSouth = 0
+        legalWest = 0
+        legalEast = 0
+        if 'North' in legalActions:
+            legalNorth = 1
+        if 'South' in legalActions:
+            legalSouth = 1
+        if 'West' in legalActions:
+            legalWest = 1
+        if 'East' in legalActions:
+            legalEast = 1
+        if ghostDistances[0] != None:
+            ghost1Distance = ghostDistances[0]
+        if ghostDistances[1] != None:
+            ghost2Distance = ghostDistances[1]
+        if ghostDistances[2] != None:
+            ghost3Distance = ghostDistances[2]
+        if ghostDistances[3] != None:
+            ghost4Distance = ghostDistances[3]
+        return  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
+                str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
+                str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
+                str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
+                str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
+                str(legalNorth) + ", " + str(legalSouth) + ", " + \
+                str(legalWest) + ", " + str(legalEast) + ", " + \
+                str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
+                str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
+                str(ghost1Distance) + ", " + str(ghost2Distance) + ", " + \
+                str(ghost3Distance) + ", " + str(ghost4Distance) + ", " + \
+                str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
+                str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove)
+                

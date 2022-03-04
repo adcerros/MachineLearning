@@ -626,7 +626,37 @@ class Game(object):
             
             # FUNCION PROPIA /////////////////////////////////////////
             if 'printLineData' in dir( agent ):
-                importantInformationFile = open("importantInformation.txt","a")
+                importantInformationFile = open("./all_data_pacman.arff","a")
+                if os.stat("./all_data_pacman.arff").st_size == 0:
+                    importantInformationFile.write("@RELATION all_data_pacman" + "\n\t" + 
+                                                    "@ATTRIBUTE pacmanPosX NUMERIC" + "\n\t" +  
+                                                    "@ATTRIBUTE pacmanPosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_1_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_1_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_2_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_2_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_3_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_3_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_4_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE Ghost_4_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE legalNorth NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE legalSouth NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE legalWest NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE legalEast NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_1_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_2_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_3_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_4_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_1_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_2_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_3_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_4_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_1 {True, False}" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_2 {True, False}" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_3 {True, False}" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_4 {True, False}" + "\n\t" + 
+                                                    "@ATTRIBUTE currentMove {Stop, North, South, West, East}" + "\n\n" + 
+                                                    "@data" + "\n")                                   
                 importantInformationFile.write(agent.printLineData(self.state) + "\n")
                 importantInformationFile.close()
             #  ////////////////////////////////////////////////////////
