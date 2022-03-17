@@ -114,6 +114,7 @@ class BustersAgent(object):
 class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
     "An agent controlled by the keyboard that displays beliefs about ghost positions."
     currentAction = "Stop"
+    livingGhost = 4
 
     def __init__(self, index = 0, inference = "KeyboardInference", ghostAgents = None):
         KeyboardAgent.__init__(self, index)
@@ -126,22 +127,42 @@ class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
         self.currentAction = KeyboardAgent.getAction(self, gameState)
         return KeyboardAgent.getAction(self, gameState)
     
+
     # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
     def printLineData(self, gameState):
+        self.livingGhost = gameState.livingGhosts.count(True)
         pacmanPosition = gameState.getPacmanPosition()
         ghostPositions = gameState.getGhostPositions()
         livingGhost = gameState.getLivingGhosts()
         legalActions = gameState.getLegalPacmanActions()
         ghostDirections = gameState.getGhostDirections()
         ghostDistances = gameState.data.ghostDistances
-        ghost1Distance = 1000
-        ghost2Distance = 1000
-        ghost3Distance = 1000
-        ghost4Distance = 1000
-        legalNorth = 0
-        legalSouth = 0
-        legalWest = 0
-        legalEast = 0
+        legalNorth, legalSouth, legalWest, legalEast = self.getBinaryLegalMovements(legalActions)
+        turnData =  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
+                    str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
+                    str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
+                    str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
+                    str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
+                    str(legalNorth) + ", " + str(legalSouth) + ", " + \
+                    str(legalWest) + ", " + str(legalEast) + ", " + \
+                    str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
+                    str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
+                    str(ghostDistances[0]) + ", " + str(ghostDistances[1]) + ", " + \
+                    str(ghostDistances[2]) + ", " + str(ghostDistances[3]) + ", " + \
+                    str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
+                    str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove) + ", "  + \
+                    str(self.countActions) + ", " + str(gameState.getScore())
+        # Se realiza un remplazo para convertir las variables nominales a numericas siguiendo un patron
+        oldValues = ["None", "Stop", "North", "South", "West", "East", "False", "True"]
+        newValues = ["0", "1", "2", "3", "4", "5", "0", "1"]
+        for old, new in zip(oldValues, newValues):
+            turnData = turnData.replace(old, new)
+        return turnData
+      
+                
+
+    def getBinaryLegalMovements(self, legalActions):
+        legalNorth, legalSouth, legalWest, legalEast = 0, 0, 0, 0
         if 'North' in legalActions:
             legalNorth = 1
         if 'South' in legalActions:
@@ -150,27 +171,7 @@ class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
             legalWest = 1
         if 'East' in legalActions:
             legalEast = 1
-        if ghostDistances[0] != None:
-            ghost1Distance = ghostDistances[0]
-        if ghostDistances[1] != None:
-            ghost2Distance = ghostDistances[1]
-        if ghostDistances[2] != None:
-            ghost3Distance = ghostDistances[2]
-        if ghostDistances[3] != None:
-            ghost4Distance = ghostDistances[3]
-        return  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
-                str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
-                str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
-                str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
-                str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
-                str(legalNorth) + ", " + str(legalSouth) + ", " + \
-                str(legalWest) + ", " + str(legalEast) + ", " + \
-                str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
-                str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
-                str(ghost1Distance) + ", " + str(ghost2Distance) + ", " + \
-                str(ghost3Distance) + ", " + str(ghost4Distance) + ", " + \
-                str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
-                str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentAction)
+        return legalNorth,legalSouth,legalWest,legalEast
 
 from distanceCalculator import Distancer
 from game import Actions
@@ -266,6 +267,7 @@ class BasicAgentAA(BustersAgent):
     currentNearlyGhostIndex = None
     nearlyGhostPos = None
     currentMove = "Stop"
+    livingGhost = 4
 
     def registerInitialState(self, gameState):
         BustersAgent.registerInitialState(self, gameState)
@@ -293,6 +295,7 @@ class BasicAgentAA(BustersAgent):
         return table
 
     def printInfo(self, gameState):
+        self.livingGhost = gameState.livingGhosts.count(True)
         print("---------------- TICK ", self.countActions, " --------------------------")
         # Map size
         width, height = gameState.data.layout.width, gameState.data.layout.height
@@ -409,20 +412,41 @@ class BasicAgentAA(BustersAgent):
 
     # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
     def printLineData(self, gameState):
+        self.livingGhost = gameState.livingGhosts.count(True)
         pacmanPosition = gameState.getPacmanPosition()
         ghostPositions = gameState.getGhostPositions()
         livingGhost = gameState.getLivingGhosts()
         legalActions = gameState.getLegalPacmanActions()
         ghostDirections = gameState.getGhostDirections()
         ghostDistances = gameState.data.ghostDistances
-        ghost1Distance = 1000
-        ghost2Distance = 1000
-        ghost3Distance = 1000
-        ghost4Distance = 1000
-        legalNorth = 0
-        legalSouth = 0
-        legalWest = 0
-        legalEast = 0
+        legalNorth, legalSouth, legalWest, legalEast = self.getBinaryLegalMovements(legalActions)
+        turnData =  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
+                    str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
+                    str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
+                    str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
+                    str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
+                    str(legalNorth) + ", " + str(legalSouth) + ", " + \
+                    str(legalWest) + ", " + str(legalEast) + ", " + \
+                    str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
+                    str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
+                    str(ghostDistances[0]) + ", " + str(ghostDistances[1]) + ", " + \
+                    str(ghostDistances[2]) + ", " + str(ghostDistances[3]) + ", " + \
+                    str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
+                    str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove) + ", "  + \
+                    str(self.countActions) + ", " + str(gameState.getScore())
+        # Se realiza un remplazo para convertir las variables nominales a numericas siguiendo un patron
+        oldValues = ["None", "Stop", "North", "South", "West", "East", "False", "True"]
+        newValues = ["0", "1", "2", "3", "4", "5", "0", "1"]
+        for old, new in zip(oldValues, newValues):
+            turnData = turnData.replace(old, new)
+        return turnData
+      
+      
+      
+                
+
+    def getBinaryLegalMovements(self, legalActions):
+        legalNorth, legalSouth, legalWest, legalEast = 0, 0, 0, 0
         if 'North' in legalActions:
             legalNorth = 1
         if 'South' in legalActions:
@@ -431,25 +455,4 @@ class BasicAgentAA(BustersAgent):
             legalWest = 1
         if 'East' in legalActions:
             legalEast = 1
-        if ghostDistances[0] != None:
-            ghost1Distance = ghostDistances[0]
-        if ghostDistances[1] != None:
-            ghost2Distance = ghostDistances[1]
-        if ghostDistances[2] != None:
-            ghost3Distance = ghostDistances[2]
-        if ghostDistances[3] != None:
-            ghost4Distance = ghostDistances[3]
-        return  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
-                str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
-                str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
-                str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
-                str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
-                str(legalNorth) + ", " + str(legalSouth) + ", " + \
-                str(legalWest) + ", " + str(legalEast) + ", " + \
-                str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
-                str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
-                str(ghost1Distance) + ", " + str(ghost2Distance) + ", " + \
-                str(ghost3Distance) + ", " + str(ghost4Distance) + ", " + \
-                str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
-                str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove)
-                
+        return legalNorth,legalSouth,legalWest,legalEast

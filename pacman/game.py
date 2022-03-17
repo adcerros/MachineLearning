@@ -626,7 +626,7 @@ class Game(object):
             
             # FUNCION PROPIA /////////////////////////////////////////
             if 'printLineData' in dir( agent ):
-                importantInformationFile = open("./all_data_pacman.arff","a")
+                importantInformationFile = open("./all_data_pacman.arff","a+")
                 if os.stat("./all_data_pacman.arff").st_size == 0:
                     importantInformationFile.write("@RELATION all_data_pacman" + "\n\t" + 
                                                     "@ATTRIBUTE pacmanPosX NUMERIC" + "\n\t" +  
@@ -643,21 +643,54 @@ class Game(object):
                                                     "@ATTRIBUTE legalSouth NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE legalWest NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE legalEast NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_1_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_2_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_3_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_4_Directions {Stop, North, South, West, East, None}" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_1_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_2_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_3_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE ghost_4_Directions NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE ghost_1_Distance NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE ghost_2_Distance NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE ghost_3_Distance NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE ghost_4_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE livingGhost_1 {True, False}" + "\n\t" + 
-                                                    "@ATTRIBUTE livingGhost_2 {True, False}" + "\n\t" + 
-                                                    "@ATTRIBUTE livingGhost_3 {True, False}" + "\n\t" + 
-                                                    "@ATTRIBUTE livingGhost_4 {True, False}" + "\n\t" + 
-                                                    "@ATTRIBUTE currentMove {Stop, North, South, West, East}" + "\n\n" + 
-                                                    "@data" + "\n")                                   
-                importantInformationFile.write(agent.printLineData(self.state) + "\n")
+                                                    "@ATTRIBUTE livingGhost_1 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_2 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_3 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE livingGhost_4 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE movements NUMERIC" + "\n\t" +
+                                                    "@ATTRIBUTE score NUMERIC" + "\n\t" +
+                                                    "@ATTRIBUTE next_pacmanPosX NUMERIC" + "\n\t" +  
+                                                    "@ATTRIBUTE next_pacmanPosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_1_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_1_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_2_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_2_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_3_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_3_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_4_PosX NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_Ghost_4_PosY NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_legalNorth NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_legalSouth NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_legalWest NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_legalEast NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_1_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_2_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_3_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_4_Directions NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_1_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_2_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_3_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_ghost_4_Distance NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_livingGhost_1 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_livingGhost_2 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_livingGhost_3 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_livingGhost_4 NUMERIC" + "\n\t" + 
+                                                    "@ATTRIBUTE next_movements NUMERIC" + "\n\t" +
+                                                    "@ATTRIBUTE next_score NUMERIC" + "\n\n" +  
+                                                    "@data" + "\n")                               
+                if agent.countActions > 0:
+                    importantInformationFile.write(importantInformationFile.readline() + ", " + agent.printLineData(self.state) + "\n")
+                    importantInformationFile.write(agent.printLineData(self.state))
+                else:
+                    importantInformationFile.write(agent.printLineData(self.state))
                 importantInformationFile.close()
             #  ////////////////////////////////////////////////////////
             
@@ -742,6 +775,11 @@ class Game(object):
                     return
             else:
                 self.state = self.state.generateSuccessor( agentIndex, action )
+            # Se añade la informacion del ultimo turno
+            if self.state.isWin():
+                importantInformationFile = open("./all_data_pacman.arff","a+")
+                importantInformationFile.write(importantInformationFile.readline() + ", " + agent.printLineData(self.state) + "\n")
+                importantInformationFile.close()
 
             # Change the display
             self.display.update( self.state.data )
