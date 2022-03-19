@@ -113,18 +113,21 @@ class BustersAgent(object):
 
 class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
     "An agent controlled by the keyboard that displays beliefs about ghost positions."
-    currentAction = "Stop"
+    currentMove = "Stop"
     livingGhost = 4
+    countActions = 0
+
 
     def __init__(self, index = 0, inference = "KeyboardInference", ghostAgents = None):
         KeyboardAgent.__init__(self, index)
         BustersAgent.__init__(self, index, inference, ghostAgents)
 
     def getAction(self, gameState):
+        self.countActions = self.countActions + 1
         return BustersAgent.getAction(self, gameState)
 
     def chooseAction(self, gameState):
-        self.currentAction = KeyboardAgent.getAction(self, gameState)
+        self.currentMove = KeyboardAgent.getAction(self, gameState)
         return KeyboardAgent.getAction(self, gameState)
     
 
