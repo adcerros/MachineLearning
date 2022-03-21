@@ -656,6 +656,7 @@ class Game(object):
                                                     "@ATTRIBUTE livingGhost_3 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE livingGhost_4 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE movements NUMERIC" + "\n\t" +
+                                                    "@ATTRIBUTE numberOfMovements NUMERIC" + "\n\t" +
                                                     "@ATTRIBUTE score NUMERIC" + "\n\t" +
                                                     "@ATTRIBUTE next_pacmanPosX NUMERIC" + "\n\t" +  
                                                     "@ATTRIBUTE next_pacmanPosY NUMERIC" + "\n\t" + 
@@ -684,6 +685,7 @@ class Game(object):
                                                     "@ATTRIBUTE next_livingGhost_3 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_livingGhost_4 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_movements NUMERIC" + "\n\t" +
+                                                    "@ATTRIBUTE next_numberOfMovements NUMERIC" + "\n\t" +
                                                     "@ATTRIBUTE next_score NUMERIC" + "\n\n" +  
                                                     "@data" + "\n")                               
                 if agent.countActions > 0:
