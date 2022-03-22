@@ -777,11 +777,13 @@ class Game(object):
                     return
             else:
                 self.state = self.state.generateSuccessor( agentIndex, action )
-            # Se añade la informacion del ultimo turno
-            if self.state.isWin():
-                importantInformationFile = open("./all_data_pacman.arff","a+")
-                importantInformationFile.write(importantInformationFile.readline() + ", " + agent.printLineData(self.state) + "\n")
-                importantInformationFile.close()
+            # FUNCION PROPIA /////////////////////////////////////////
+            if 'printLineData' in dir( agent ):
+                # Se añade la informacion del ultimo turno
+                if self.state.isWin():
+                    importantInformationFile = open("./all_data_pacman.arff","a+")
+                    importantInformationFile.write(importantInformationFile.readline() + ", " + agent.printLineData(self.state) + "\n")
+                    importantInformationFile.close()
 
             # Change the display
             self.display.update( self.state.data )
