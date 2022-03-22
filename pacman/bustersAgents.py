@@ -271,11 +271,11 @@ class BasicAgentAA(BustersAgent):
     nearlyGhostPos = None
     currentMove = "Stop"
     livingGhost = 4
+    countActions = 0
 
     def registerInitialState(self, gameState):
         BustersAgent.registerInitialState(self, gameState)
         self.distancer = Distancer(gameState.data.layout, False)
-        self.countActions = 0
         
     ''' Example of counting something'''
     def countFood(self, gameState):

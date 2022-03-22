@@ -617,6 +617,9 @@ class Game(object):
         agentIndex = self.startingIndex
         numAgents = len( self.agents )
         step = 0
+        # VARIABLES PARA LA IMPRESION DE LOS DATOS PRESENTES Y FUTUROS /////////////////////////////////////////
+        presentLine = ""
+        futureLine = ""
         while not self.gameOver:
             # Fetch the next agent
             agent = self.agents[agentIndex]
@@ -686,14 +689,17 @@ class Game(object):
                                                     "@ATTRIBUTE next_livingGhost_4 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_movements NUMERIC" + "\n\t" +
                                                     "@ATTRIBUTE next_numberOfMovements NUMERIC" + "\n\t" +
-                                                    "@ATTRIBUTE next_score NUMERIC" + "\n\n" +  
-                                                    "@data" + "\n")                               
-                if agent.countActions > 0:
-                    importantInformationFile.write(importantInformationFile.readline() + ", " + agent.printLineData(self.state) + "\n")
-                    importantInformationFile.write(agent.printLineData(self.state))
+                                                    "@ATTRIBUTE next_score NUMERIC" + "\n\t" +  
+                                                    "@data" + "\n") 
+                    importantInformationFile.close()
+                if agent.countActions >= 1:
+                    futureLine = agent.printLineData(self.state) 
+                    importantInformationFile = open("./all_data_pacman.arff","a+")
+                    importantInformationFile.write(presentLine + ", " + futureLine + "\n")     
+                    importantInformationFile.close()   
+                    presentLine = futureLine    
                 else:
-                    importantInformationFile.write(agent.printLineData(self.state))
-                importantInformationFile.close()
+                    presentLine =  agent.printLineData(self.state)                  
             #  ////////////////////////////////////////////////////////
             
             if 'observationFunction' in dir( agent ):
@@ -777,13 +783,6 @@ class Game(object):
                     return
             else:
                 self.state = self.state.generateSuccessor( agentIndex, action )
-            # FUNCION PROPIA /////////////////////////////////////////
-            if 'printLineData' in dir( agent ):
-                # Se añade la informacion del ultimo turno
-                if self.state.isWin():
-                    importantInformationFile = open("./all_data_pacman.arff","a+")
-                    importantInformationFile.write(importantInformationFile.readline() + ", " + agent.printLineData(self.state) + "\n")
-                    importantInformationFile.close()
 
             # Change the display
             self.display.update( self.state.data )
@@ -800,6 +799,13 @@ class Game(object):
             if _BOINC_ENABLED:
                 boinc.set_fraction_done(self.getProgress())
 
+        # FUNCION PROPIA /////////////////////////////////////////
+        if 'printLineData' in dir( agent ):
+            futureLine = agent.printLineData(self.state) 
+            importantInformationFile = open("./all_data_pacman.arff","a+")
+            importantInformationFile.write(presentLine + ", " + futureLine + "\n")     
+            importantInformationFile.close()  
+
         # inform a learning agent of the game result
         for agentIndex, agent in enumerate(self.agents):
             if "final" in dir( agent ) :
@@ -813,3 +819,4 @@ class Game(object):
                     self.unmute()
                     return
         self.display.finish()
+
