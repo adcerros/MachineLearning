@@ -520,7 +520,9 @@ class Game(object):
     """
     The Game manages the control flow, soliciting actions from agents.
     """
-
+    # VARIABLES PARA LA IMPRESION DE LOS DATOS PRESENTES Y FUTUROS /////////////////////////////////////////
+    presentLine = ""
+    futureLine = ""
     def __init__( self, agents, display, rules, startingIndex=0, muteAgents=False, catchExceptions=False ):
         self.agentCrashed = False
         self.agents = agents
@@ -569,13 +571,13 @@ class Game(object):
         sys.stdout = OLD_STDOUT
         sys.stderr = OLD_STDERR
 
+
     def run( self ):
         """
         Main control loop for game play.
         """
         self.display.initialize(self.state.data)
         self.numMoves = 0
-
         ###self.display.initialize(self.state.makeObservation(1).data)
         # inform learning agents of the game start
         for i in range(len(self.agents)):
@@ -617,9 +619,6 @@ class Game(object):
         agentIndex = self.startingIndex
         numAgents = len( self.agents )
         step = 0
-        # VARIABLES PARA LA IMPRESION DE LOS DATOS PRESENTES Y FUTUROS /////////////////////////////////////////
-        presentLine = ""
-        futureLine = ""
         while not self.gameOver:
             # Fetch the next agent
             agent = self.agents[agentIndex]
@@ -693,13 +692,13 @@ class Game(object):
                                                     "@data" + "\n") 
                     importantInformationFile.close()
                 if agent.countActions >= 1:
-                    futureLine = agent.printLineData(self.state) 
+                    self.futureLine = agent.printLineData(self.state) 
                     importantInformationFile = open("./all_data_pacman.arff","a+")
-                    importantInformationFile.write(presentLine + ", " + futureLine + "\n")     
+                    importantInformationFile.write(self.presentLine + ", " + self.futureLine + "\n")     
                     importantInformationFile.close()   
-                    presentLine = futureLine    
+                    self.presentLine = self.futureLine    
                 else:
-                    presentLine =  agent.printLineData(self.state)                  
+                    self.presentLine =  agent.printLineData(self.state)                  
             #  ////////////////////////////////////////////////////////
             
             if 'observationFunction' in dir( agent ):
@@ -770,19 +769,21 @@ class Game(object):
             else:
                 action = agent.getAction(observation)
             self.unmute()
-
             # Execute the action
             self.moveHistory.append( (agentIndex, action) )
             if self.catchExceptions:
                 try:
                     self.state = self.state.generateSuccessor( agentIndex, action )
                 except Exception as data:
+                     # FUNCION PROPIA /////////////////////////////////////////
+                    self.writeFinalState(agent)  
                     self.mute(agentIndex)
                     self._agentCrash(agentIndex)
                     self.unmute()
                     return
             else:
                 self.state = self.state.generateSuccessor( agentIndex, action )
+
 
             # Change the display
             self.display.update( self.state.data )
@@ -798,13 +799,9 @@ class Game(object):
 
             if _BOINC_ENABLED:
                 boinc.set_fraction_done(self.getProgress())
-
         # FUNCION PROPIA /////////////////////////////////////////
-        if 'printLineData' in dir( agent ):
-            futureLine = agent.printLineData(self.state) 
-            importantInformationFile = open("./all_data_pacman.arff","a+")
-            importantInformationFile.write(presentLine + ", " + futureLine + "\n")     
-            importantInformationFile.close()  
+        self.writeFinalState(agent)  
+
 
         # inform a learning agent of the game result
         for agentIndex, agent in enumerate(self.agents):
@@ -819,4 +816,12 @@ class Game(object):
                     self.unmute()
                     return
         self.display.finish()
+
+    # FUNCION PROPIA /////////////////////////////////////////
+    def writeFinalState(self, agent):
+        if 'printLineData' in dir( agent ):
+            self.futureLine = agent.printLineData(self.state) 
+            importantInformationFile = open("./all_data_pacman.arff","a+")
+            importantInformationFile.write(self.presentLine + ", " + self.futureLine + "\n")     
+            importantInformationFile.close()
 
