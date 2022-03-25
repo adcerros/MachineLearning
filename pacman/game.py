@@ -649,10 +649,6 @@ class Game(object):
                                                     "@ATTRIBUTE ghost_2_Directions NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE ghost_3_Directions NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE ghost_4_Directions NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_1_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_2_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_3_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE ghost_4_Distance NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE livingGhost_1 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE livingGhost_2 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE livingGhost_3 NUMERIC" + "\n\t" + 
@@ -678,10 +674,6 @@ class Game(object):
                                                     "@ATTRIBUTE next_ghost_2_Directions NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_ghost_3_Directions NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_ghost_4_Directions NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE next_ghost_1_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE next_ghost_2_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE next_ghost_3_Distance NUMERIC" + "\n\t" + 
-                                                    "@ATTRIBUTE next_ghost_4_Distance NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_livingGhost_1 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_livingGhost_2 NUMERIC" + "\n\t" + 
                                                     "@ATTRIBUTE next_livingGhost_3 NUMERIC" + "\n\t" + 
