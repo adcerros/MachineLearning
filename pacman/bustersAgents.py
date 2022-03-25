@@ -148,8 +148,6 @@ class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
                     str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
                     str(legalNorth) + ", " + str(legalSouth) + ", " + \
                     str(legalWest) + ", " + str(legalEast) + ", " + \
-                    str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
-                    str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
                     str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
                     str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove) + ", "  + \
                     str(self.countActions) + ", " + str(gameState.getScore())
@@ -428,8 +426,6 @@ class BasicAgentAA(BustersAgent):
                     str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
                     str(legalNorth) + ", " + str(legalSouth) + ", " + \
                     str(legalWest) + ", " + str(legalEast) + ", " + \
-                    str(ghostDirections.get(0))  + ", " + str(ghostDirections.get(1))  + ", " + \
-                    str(ghostDirections.get(2))  + ", " + str(ghostDirections.get(3))  + ", " + \
                     str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
                     str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove) + ", "  + \
                     str(self.countActions) + ", " + str(gameState.getScore())
