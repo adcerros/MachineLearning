@@ -1,4 +1,5 @@
 from __future__ import print_function
+from wekaI import Weka
 # bustersAgents.py
 # ----------------
 # Licensing Information:  You are free to use or extend these projects for
@@ -72,12 +73,18 @@ class KeyboardInference(inference.InferenceModule):
 
 class BustersAgent(object):
     "An agent that tracks and displays its beliefs about ghost positions."
+    modelData = []
+    currentMove = "Stop"
+    livingGhost = 4
+    countActions = 0
 
     def __init__( self, index = 0, inference = "ExactInference", ghostAgents = None, observeEnable = True, elapseTimeEnable = True):
         inferenceType = util.lookup(inference, globals())
         self.inferenceModules = [inferenceType(a) for a in ghostAgents]
         self.observeEnable = observeEnable
         self.elapseTimeEnable = elapseTimeEnable
+        self.weka = Weka()
+        self.weka.start_jvm()
 
     def registerInitialState(self, gameState):
         "Initializes beliefs and inference modules"
@@ -105,11 +112,54 @@ class BustersAgent(object):
         #        inf.observeState(gameState)
         #    self.ghostBeliefs[index] = inf.getBeliefDistribution()
         #self.display.updateDistributions(self.ghostBeliefs)
+        self.countActions = self.countActions + 1
         return self.chooseAction(gameState)
 
     def chooseAction(self, gameState):
-        "By default, a BustersAgent just stops.  This should be overridden."
+        # "By default, a BustersAgent just stops.  This should be overridden."
+        x = [1,1,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,"1",1,1]
+        a = self.weka.predict("./rf_model", x, "./training_set.arff")
+        print("LA COSA ES:      /////// " + str(a) + "\n")
+        print("LA COSA ES:      ///////\n")
         return Directions.STOP
+
+     # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
+    def printLineData(self, gameState):
+        self.livingGhost = gameState.livingGhosts.count(True)
+        pacmanPosition = gameState.getPacmanPosition()
+        ghostPositions = gameState.getGhostPositions()
+        livingGhost = gameState.getLivingGhosts()
+        legalActions = gameState.getLegalPacmanActions()
+        legalNorth, legalSouth, legalWest, legalEast = self.getBinaryLegalMovements(legalActions)
+        turnData =  str(pacmanPosition[0]) + ", " + str(pacmanPosition[1]) + ", " + \
+                    str(ghostPositions[0][0]) + ", "  +  str(ghostPositions[0][1]) + ", " + \
+                    str(ghostPositions[1][0]) + ", "  +  str(ghostPositions[1][1]) + ", " + \
+                    str(ghostPositions[2][0]) + ", "  +  str(ghostPositions[2][1]) + ", " + \
+                    str(ghostPositions[3][0]) + ", "  +  str(ghostPositions[3][1]) + ", " + \
+                    str(legalNorth) + ", " + str(legalSouth) + ", " + \
+                    str(legalWest) + ", " + str(legalEast) + ", " + \
+                    str(livingGhost[1]) + ", "  +  str(livingGhost[2]) + ", " + \
+                    str(livingGhost[3]) + ", "  +  str(livingGhost[4]) + ", " + str(self.currentMove) + ", "  + \
+                    str(self.countActions) + ", " + str(gameState.getScore())
+        # Se realiza un remplazo para convertir las variables nominales a numericas siguiendo un patron
+        oldValues = ["None", "Stop", "North", "South", "West", "East", "False", "True"]
+        newValues = ["0", "1", "2", "3", "4", "5", "0", "1"]
+        for old, new in zip(oldValues, newValues):
+            turnData = turnData.replace(old, new)
+        return turnData
+    
+
+    def getBinaryLegalMovements(self, legalActions):
+        legalNorth, legalSouth, legalWest, legalEast = 0, 0, 0, 0
+        if 'North' in legalActions:
+            legalNorth = 1
+        if 'South' in legalActions:
+            legalSouth = 1
+        if 'West' in legalActions:
+            legalWest = 1
+        if 'East' in legalActions:
+            legalEast = 1
+        return legalNorth,legalSouth,legalWest,legalEast
 
 class BustersKeyboardAgent(BustersAgent, KeyboardAgent):
     "An agent controlled by the keyboard that displays beliefs about ghost positions."
@@ -330,6 +380,7 @@ class BasicAgentAA(BustersAgent):
     # Una vez alcanzado el estado final evalua si debe establecer un nuevo objetivo 
     def chooseAction(self, gameState):
         self.countActions = self.countActions + 1
+
         self.printInfo(gameState)
         livingGhosts = gameState.getLivingGhosts()
         # Se comprueba si el pacman se ha comido al fantasma objetivo o se ha llegado al final del camino establecido por A*
