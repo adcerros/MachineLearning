@@ -117,11 +117,64 @@ class BustersAgent(object):
 
     def chooseAction(self, gameState):
         # "By default, a BustersAgent just stops.  This should be overridden."
-        x = [1,1,2,2,2,2,2,2,2,2,1,1,1,1,1,1,1,1,1,"1",1,1]
-        a = self.weka.predict("./rf_model", x, "./training_set.arff")
-        print("LA COSA ES:      /////// " + str(a) + "\n")
-        print("LA COSA ES:      ///////\n")
-        return Directions.STOP
+        x = self.returnModelData(gameState)
+        a = self.weka.predict("./myModel.model", x, "./training_set.arff")
+        if (a == 0): 
+            self.currentMove = Directions.STOP 
+            return Directions.STOP 
+        if (a == '1'): 
+            self.currentMove = Directions.STOP 
+            return Directions.STOP, gameState
+        if (a == '2'): 
+            self.currentMove = Directions.NORTH 
+            return self.checkCorrectAction(Directions.NORTH, gameState)
+        if (a == '3'): 
+            self.currentMove = Directions.SOUTH 
+            return self.checkCorrectAction(Directions.SOUTH, gameState)
+        if (a == '4'): 
+            self.currentMove = Directions.WEST 
+            return self.checkCorrectAction(Directions.WEST, gameState)
+        if (a == '5'): 
+            self.currentMove = Directions.EAST 
+            return self.checkCorrectAction(Directions.EAST, gameState)
+        else:
+            return Directions.STOP
+    
+    def checkCorrectAction(self, action, gameState):
+        legalActions = gameState.getLegalActions(0) 
+        if action in legalActions:
+            return action
+        else:
+            return self.chooseActionRand(gameState)
+
+    def chooseActionRand(self, gameState):
+        move = Directions.STOP
+        legal = gameState.getLegalActions(0) ##Legal position from the pacman
+        move_random = random.randint(0, 3)
+        if   ( move_random == 0 ) and Directions.WEST in legal:  move = Directions.WEST
+        if   ( move_random == 1 ) and Directions.EAST in legal: move = Directions.EAST
+        if   ( move_random == 2 ) and Directions.NORTH in legal:   move = Directions.NORTH
+        if   ( move_random == 3 ) and Directions.SOUTH in legal: move = Directions.SOUTH
+        return move
+
+    def returnModelData(self, gameState):
+        self.livingGhost = gameState.livingGhosts.count(True)
+        pacmanPosition = gameState.getPacmanPosition()
+        ghostPositions = gameState.getGhostPositions()
+        livingGhost = gameState.getLivingGhosts()
+        legalActions = gameState.getLegalPacmanActions()
+        legalNorth, legalSouth, legalWest, legalEast = self.getBinaryLegalMovements(legalActions)
+        turnData =  [pacmanPosition[0], pacmanPosition[1], ghostPositions[0][0], ghostPositions[0][1], ghostPositions[1][0], 
+                    ghostPositions[1][1], ghostPositions[2][0], ghostPositions[2][1], ghostPositions[3][0], ghostPositions[3][1], legalNorth, legalSouth, legalWest, legalEast, str(livingGhost[1]), str(livingGhost[2]), str(livingGhost[3]), str(livingGhost[4]), self.countActions, gameState.getScore()]
+        # Se realiza un remplazo para convertir las variables nominales a numericas siguiendo un patron
+        oldValues = ["True", "False"]
+        newValues = ['0', '1']
+        for old, new in zip(oldValues, newValues):
+                turnData[14] = turnData[14].replace(old, new)
+                turnData[15] = turnData[15].replace(old, new)
+                turnData[16] = turnData[16].replace(old, new)
+                turnData[17] = turnData[17].replace(old, new)
+        return turnData
 
      # Retorna la posicion del pacman, los fantasmas y su estado (vivo/muerto)
     def printLineData(self, gameState):
