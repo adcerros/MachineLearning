@@ -73,7 +73,6 @@ class KeyboardInference(inference.InferenceModule):
 
 class BustersAgent(object):
     "An agent that tracks and displays its beliefs about ghost positions."
-    modelData = []
     currentMove = "Stop"
     livingGhost = 4
     countActions = 0
@@ -119,7 +118,7 @@ class BustersAgent(object):
         # "By default, a BustersAgent just stops.  This should be overridden."
         x = self.returnModelData(gameState)
         a = self.weka.predict("./myModel.model", x, "./training_set.arff")
-        if (a == 0): 
+        if (a == '0'): 
             self.currentMove = Directions.STOP 
             return Directions.STOP 
         if (a == '1'): 
