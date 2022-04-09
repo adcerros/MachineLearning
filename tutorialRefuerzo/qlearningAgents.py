@@ -27,7 +27,7 @@ class QLearningAgent(ReinforcementAgent):
         self.table_file = open("qtable.txt", "r+")
 #        self.table_file_csv = open("qtable.csv", "r+")        
         self.q_table = self.readQtable()
-        self.epsilon = 0.05
+        self.epsilon = 1
 
     def readQtable(self):
         "Read qtable from disc"
