@@ -287,6 +287,7 @@ class QLearningAgent(BustersAgent):
     def registerInitialState(self, gameState):
         BustersAgent.registerInitialState(self, gameState)
         self.distancer = Distancer(gameState.data.layout, False)
+        self.maxDistance = gameState.data.layout.width + gameState.data.layout.height - 2
         self.initQtable(gameState)
         self.table_file = open('qtable.txt', 'r+')
 #        self.table_file_csv = open("qtable.csv", "r+")        
@@ -297,7 +298,6 @@ class QLearningAgent(BustersAgent):
         self.reward = 0
         self.countActions = 0
 
-        
 
     def __init__( self, index = 0, inference = "ExactInference", ghostAgents = None, observeEnable = True, elapseTimeEnable = True):
         inferenceType = util.lookup(inference, globals())
@@ -316,15 +316,15 @@ class QLearningAgent(BustersAgent):
                 if gameState.data.ghostDistances[i] < nearlyGhost[0]:
                     nearlyGhost = [gameState.data.ghostDistances[i], i]
         self.currentNearlyGhostIndex = nearlyGhost[1]
+        self.nearlyGhostDistance = nearlyGhost[0]
         ghostsPositions = gameState.getGhostPositions()
-        self.nearlyGhostPos = ghostsPositions[self.currentNearlyGhostIndex]
+        return ghostsPositions[self.currentNearlyGhostIndex]
 
 
     def initQtable(self, gameState):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
-            width, height = gameState.data.layout.width, gameState.data.layout.height
-            for i in range(width * height):
+            for i in range(8 * self.maxDistance):
                 for j in range(5):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
@@ -372,12 +372,26 @@ class QLearningAgent(BustersAgent):
 
 
     def computePosition(self, state):
-        """
-        Compute the row of the qtable for a given state.
-        For instance, the state (3,1) is the row 7
-        """
-        currentPos = state.getPacmanPosition()
-        return currentPos[0] + currentPos[1] * state.data.layout.width
+        current_pacman_pos = state.getPacmanPosition()
+        nearlyGhostPos = self.getNearlyGhostPos(state)
+        diferenceX =  nearlyGhostPos[0] - current_pacman_pos[0]
+        diferenceY =  nearlyGhostPos[1] - current_pacman_pos[1]
+        if diferenceX < 0 and diferenceY < 0:
+            return 0 * 8 + self.nearlyGhostDistance 
+        elif diferenceX < 0 and diferenceY > 0:
+            return 1 * 8 + self.nearlyGhostDistance 
+        elif diferenceX < 0 and diferenceY == 0:
+            return 2 * 8 + self.nearlyGhostDistance 
+        elif diferenceX == 0 and diferenceY < 0:
+            return 3 * 8 + self.nearlyGhostDistance 
+        elif diferenceX == 0 and diferenceY > 0:
+            return 4 * 8 + self.nearlyGhostDistance 
+        elif diferenceX > 0 and diferenceY < 0:
+            return 5 * 8 + self.nearlyGhostDistance 
+        elif diferenceX > 0 and diferenceY > 0:
+            return 6 * 8 + self.nearlyGhostDistance 
+        elif diferenceX > 0 and diferenceY == 0:
+            return 7 * 8 + self.nearlyGhostDistance 
 
     def getQValue(self, state, action):
 
@@ -461,12 +475,9 @@ class QLearningAgent(BustersAgent):
 
 
     def update(self, state, action, nextState):
-        position = self.computePosition(state)
         action_column = self.getActionColumn(action)
-        current_pacman_pos = state.getPacmanPosition()
-        nearlyGhostPos = self.getNearlyGhostPos(state)
-        nearlyGhostPosNext = self.getNearlyGhostPos(nextState)
-        self.reward = nextState.getScore() - state.getScore()
+        position = self.computePosition(state)
+        self.reward = self.calculateReward(state, action, nextState)
         self.q_table[position][action_column] = (1 - self.alpha) * self.getQValue(state, action) + self.alpha * (self.reward + self.discount * self.getQValue(nextState, self.getPolicy(nextState)))
         
         # TRACE for updated q-table. Comment the following lines if you do not want to see that trace
@@ -480,3 +491,8 @@ class QLearningAgent(BustersAgent):
     def getValue(self, state):
         "Return the highest q value for a given state"
         return self.computeValueFromQValues(state)
+
+    def calculateReward(self, state, action, nextState):
+        if action == "Stop":
+            return nextState.getScore() - state.getScore() - self.nearlyGhostDistance - 1000
+        return nextState.getScore() - state.getScore() - self.nearlyGhostDistance
