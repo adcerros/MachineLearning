@@ -623,16 +623,6 @@ class Game(object):
             agent = self.agents[agentIndex]
             move_time = 0
             skip_action = False
-
-
-            if "update" in dir( agent ):
-                if agent.countActions >= 1:
-                    self.nextState = self.state
-                    agent.update(self.currentState, agent.action, self.nextState)
-                    self.currentState = self.nextState    
-                else:
-                    self.currentState =  self.state
-
             # Generate an observation of the state
             if 'observationFunction' in dir( agent ):
                 self.mute(agentIndex)
