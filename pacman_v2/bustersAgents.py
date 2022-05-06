@@ -296,7 +296,6 @@ class QLearningAgent(BustersAgent):
         self.epsilon = 0.3
         self.alpha = 0.1
         self.discount = 0.9
-        self.reward = 0
         self.countActions = 0
 
 
@@ -327,7 +326,7 @@ class QLearningAgent(BustersAgent):
             self.table_file = open('qtable.txt', 'w+') 
             # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros
             for i in range(9 * self.maxDistance * 16):
-                for j in range(5):
+                for j in range(4):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
 
@@ -398,8 +397,7 @@ class QLearningAgent(BustersAgent):
             return 2
         elif action == Directions.WEST:
             return 3
-        elif action == Directions.STOP:
-            return 4
+
 
 
     def computeActionFromQValues(self, state):
@@ -427,6 +425,7 @@ class QLearningAgent(BustersAgent):
     def getAction(self, state):
         self.gameState = state
         self.legalActions = state.getLegalPacmanActions()
+        self.legalActions = self.legalActions[0: len(self.legalActions) - 1]
         action = None
         self.countActions += 1
         if len(self.legalActions) == 0:
