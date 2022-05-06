@@ -297,6 +297,7 @@ class QLearningAgent(BustersAgent):
         self.alpha = 0.1
         self.discount = 0.9
         self.countActions = 0
+        self.score = 0
 
 
     def __init__( self, index = 0, inference = "ExactInference", ghostAgents = None, observeEnable = True, elapseTimeEnable = True):
@@ -426,6 +427,7 @@ class QLearningAgent(BustersAgent):
         self.gameState = state
         self.legalActions = state.getLegalPacmanActions()
         self.legalActions = self.legalActions[0: len(self.legalActions) - 1]
+        self.score = self.gameState.getScore() - self.score
         action = None
         self.countActions += 1
         if len(self.legalActions) == 0:
@@ -476,12 +478,12 @@ class QLearningAgent(BustersAgent):
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
         q_nextState = (next_relativePosition, next_distance, stateOfWalls)
         return q_nextState
-
+    
     def checkGhostDead(self, next_pacmanPosition, nearlyGhostPos, numAgents):
         if next_pacmanPosition[0] == nearlyGhostPos[0] and next_pacmanPosition[1] == nearlyGhostPos[1]:
             return True
         return False
-    
+
     def getNextPosition(self, action, position):
         next_pacmanPosition = copy.deepcopy(position)
         if action == "North":
@@ -546,13 +548,10 @@ class QLearningAgent(BustersAgent):
 
     def calculateReward(self, state, action, nextState):
         reward = 0
-        reward = nextState[0] - state[0]
-        # reward = nextState[0] - state[0] - self.countActions
+        reward =  state[1] - nextState[1]
         # pacmanPosition = list(self.gameState.getPacmanPosition())
+        if self.score > 0:
+            reward += self.score
         if self.ghostDead:
             reward += 100
-        else:
-            reward -= 1
-        if action == "Stop":
-            reward -= 1000
         return reward
