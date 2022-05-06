@@ -326,7 +326,7 @@ class QLearningAgent(BustersAgent):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
             # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros
-            for i in range(9 * self.maxDistance * self.maxAgents * 16):
+            for i in range(9 * self.maxDistance * 16):
                 for j in range(5):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
@@ -373,9 +373,9 @@ class QLearningAgent(BustersAgent):
         self.writeQtable()
 
 
-    # state = (relativePosition, distance, numAgents)
+    # state = (relativePosition, distance, wallsState)
     def computePosition(self, state):
-        return (state[0] * (self.maxDistance * self.maxAgents * 16)) + (state[1] * (self.maxAgents * 16)) + (state[2] * 16) + state[3]
+        return (state[0] * (self.maxDistance * 16)) + (state[1] * 16) + state[2]
 
 
     def getQValue(self, state, action):
@@ -439,10 +439,9 @@ class QLearningAgent(BustersAgent):
         nearlyGhostPos = self.getNearlyGhostPos(state)
         pacmanPosition = list(state.getPacmanPosition())
         walls = state.getWalls()
-        numAgents = state.getNumAgents() - 1
-        q_currentState = self.calculateMyCurrentState(nearlyGhostPos, pacmanPosition, numAgents, walls)
+        q_currentState = self.calculateMyCurrentState(nearlyGhostPos, pacmanPosition, walls)
         action = self.getPolicy(q_currentState)
-        q_nextState = self.calculateMyNextState(action, nearlyGhostPos, pacmanPosition, numAgents, walls)
+        q_nextState = self.calculateMyNextState(action, nearlyGhostPos, pacmanPosition, walls)
         self.update(q_currentState, action, q_nextState)
         return action
 
@@ -462,27 +461,27 @@ class QLearningAgent(BustersAgent):
 
 
     # Construccion del estado actual en forma de tupla  
-    def calculateMyCurrentState(self, nearlyGhostPos, pacmanPosition, numAgents, walls):
+    def calculateMyCurrentState(self, nearlyGhostPos, pacmanPosition, walls):
         distance = self.getNearlyGhostDistance(pacmanPosition, nearlyGhostPos)
         relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
-        q_currentState = (relativePosition, distance, numAgents, stateOfWalls)
+        q_currentState = (relativePosition, distance, stateOfWalls)
         return q_currentState
 
     # Construccion del siguiente estado en forma de tupla
-    def calculateMyNextState(self, action, nearlyGhostPos, pacmanPosition, numAgents, walls):
+    def calculateMyNextState(self, action, nearlyGhostPos, pacmanPosition, walls):
         next_pacmanPosition = self.getNextPosition(action, pacmanPosition)
         next_distance = self.getNearlyGhostDistance(next_pacmanPosition, nearlyGhostPos)
         next_relativePosition = self.getRelativePosition(next_pacmanPosition, nearlyGhostPos)
-        next_numAgents = self.getNextNumAgents(next_pacmanPosition, nearlyGhostPos, numAgents)
+        self.ghostDead = self.checkGhostDead(next_pacmanPosition, nearlyGhostPos, self.gameState.getNumAgents() - 1)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
-        q_nextState = (next_relativePosition, next_distance, next_numAgents, stateOfWalls)
+        q_nextState = (next_relativePosition, next_distance, stateOfWalls)
         return q_nextState
 
-    def getNextNumAgents(self, next_pacmanPosition, nearlyGhostPos, numAgents):
+    def checkGhostDead(self, next_pacmanPosition, nearlyGhostPos, numAgents):
         if next_pacmanPosition[0] == nearlyGhostPos[0] and next_pacmanPosition[1] == nearlyGhostPos[1]:
-            return numAgents - 1
-        return numAgents
+            return True
+        return False
     
     def getNextPosition(self, action, position):
         next_pacmanPosition = copy.deepcopy(position)
@@ -551,22 +550,10 @@ class QLearningAgent(BustersAgent):
         reward = nextState[0] - state[0]
         # reward = nextState[0] - state[0] - self.countActions
         # pacmanPosition = list(self.gameState.getPacmanPosition())
-        if state[2] - nextState[2] > 0:
-            reward += 10
+        if self.ghostDead:
+            reward += 100
         else:
             reward -= 1
-        # pacmanDirection = self.gameState.data.agentStates[0].getDirection()
-        # if pacmanDirection == "North":
-        #     pacmanPosition[1] = pacmanPosition[1] + 1
-        # elif pacmanDirection == "South":
-        #     pacmanPosition[1] = pacmanPosition[1] - 1
-        # elif pacmanDirection == "East":
-        #     pacmanPosition[0] = pacmanPosition[0] + 1
-        # elif pacmanDirection == "West":
-        #     pacmanPosition[0] = pacmanPosition[0] - 1
         if action == "Stop":
             reward -= 1000
-        # walls = self.gameState.getWalls()
-        # if walls[pacmanPosition[0]][pacmanPosition[1]] :
-        #     reward -= 100
         return reward
