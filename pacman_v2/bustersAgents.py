@@ -298,6 +298,7 @@ class QLearningAgent(BustersAgent):
         self.discount = 0.9
         self.countActions = 0
         self.score = 0
+        self.positionsList = []
 
 
     def __init__( self, index = 0, inference = "ExactInference", ghostAgents = None, observeEnable = True, elapseTimeEnable = True):
@@ -308,9 +309,12 @@ class QLearningAgent(BustersAgent):
 
 
     # Establece el objetivo mas cercano a la posicion del pacman en el momento de la llamada
-    def getNearlyGhostPos(self, state):
+    def getNearlyObjectivePos(self, state):
         # nealyGhost = [manhattanDistance, ghostNumber]
-        nearlyGhost = [1000, 0]
+        nearestFoodDistance = state.getDistanceNearestFood()
+        if nearestFoodDistance == None:
+            nearestFoodDistance = 1000
+        nearlyGhost = [nearestFoodDistance, 0]
         livingGhosts = state.getLivingGhosts()
         for i in range(len(state.data.ghostDistances)):
             if livingGhosts[i + 1] and state.data.ghostDistances[i] != None :
@@ -325,8 +329,8 @@ class QLearningAgent(BustersAgent):
     def initQtable(self):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
-            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros
-            for i in range(9 * self.maxDistance * 16):
+            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones)
+            for i in range(9 * 5 * 15):
                 for j in range(4):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
@@ -375,7 +379,7 @@ class QLearningAgent(BustersAgent):
 
     # state = (relativePosition, distance, wallsState)
     def computePosition(self, state):
-        return (state[0] * (self.maxDistance * 16)) + (state[1] * 16) + state[2]
+        return (state[0] * (5 * 15)) + (state[1] * 15) + state[2]
 
 
     def getQValue(self, state, action):
@@ -424,27 +428,48 @@ class QLearningAgent(BustersAgent):
         return random.choice(best_actions)
 
     def getAction(self, state):
-        self.gameState = state
+        action = None
         self.legalActions = state.getLegalPacmanActions()
         self.legalActions = self.legalActions[0: len(self.legalActions) - 1]
-        self.score = self.gameState.getScore() - self.score
-        action = None
-        self.countActions += 1
         if len(self.legalActions) == 0:
              return action
         flip = util.flipCoin(self.epsilon)
         if flip:
             action = random.choice(self.legalActions)
             return action
-        
-        nearlyGhostPos = self.getNearlyGhostPos(state)
+        self.updateGameStateInfo(state)
+        action, q_currentState, q_nextState = self.createNewStates(state)
+        self.update(q_currentState, action, q_nextState)
+        return action
+
+    def createNewStates(self, state):
+        nearlyGhostPos = self.getNearlyObjectivePos(state)
         pacmanPosition = list(state.getPacmanPosition())
         walls = state.getWalls()
         q_currentState = self.calculateMyCurrentState(nearlyGhostPos, pacmanPosition, walls)
         action = self.getPolicy(q_currentState)
         q_nextState = self.calculateMyNextState(action, nearlyGhostPos, pacmanPosition, walls)
-        self.update(q_currentState, action, q_nextState)
-        return action
+        return action,q_currentState,q_nextState
+
+    def updateGameStateInfo(self, state):
+        self.gameState = state
+        self.score = self.gameState.getScore() - self.score
+        self.countActions += 1
+
+    # def calculateStateOfWalls(self, pacmanPosition, walls):
+    #     # estado de los muros binario de 4 bits cada bit indica 0 no hay muro 1 hay muro
+    #     # Ej: 0001 = muro norte, sur, este = false ;  muro oeste = true;
+    #     stateOfWalls = 0
+    #     if walls[pacmanPosition[0] + 1][pacmanPosition[1]] == True:
+    #         stateOfWalls += 8
+    #     if walls[pacmanPosition[0] - 1][pacmanPosition[1]] == True:
+    #         stateOfWalls += 4
+    #     if walls[pacmanPosition[0]][pacmanPosition[1] + 1] == True:
+    #         stateOfWalls += 2
+    #     if walls[pacmanPosition[0]][pacmanPosition[1] + 1] == True:
+    #         stateOfWalls += 1
+    #     return stateOfWalls
+
 
     def calculateStateOfWalls(self, pacmanPosition, walls):
         # estado de los muros binario de 4 bits cada bit indica 0 no hay muro 1 hay muro
@@ -460,7 +485,6 @@ class QLearningAgent(BustersAgent):
             stateOfWalls += 1
         return stateOfWalls
 
-
     # Construccion del estado actual en forma de tupla  
     def calculateMyCurrentState(self, nearlyGhostPos, pacmanPosition, walls):
         distance = self.getNearlyGhostDistance(pacmanPosition, nearlyGhostPos)
@@ -471,13 +495,18 @@ class QLearningAgent(BustersAgent):
 
     # Construccion del siguiente estado en forma de tupla
     def calculateMyNextState(self, action, nearlyGhostPos, pacmanPosition, walls):
-        next_pacmanPosition = self.getNextPosition(action, pacmanPosition)
-        next_distance = self.getNearlyGhostDistance(next_pacmanPosition, nearlyGhostPos)
-        next_relativePosition = self.getRelativePosition(next_pacmanPosition, nearlyGhostPos)
-        self.ghostDead = self.checkGhostDead(next_pacmanPosition, nearlyGhostPos, self.gameState.getNumAgents() - 1)
+        self.next_pacmanPosition = self.getNextPosition(action, pacmanPosition)
+        next_distance = self.getNearlyGhostDistance(self.next_pacmanPosition, nearlyGhostPos)
+        next_relativePosition = self.getRelativePosition(self.next_pacmanPosition, nearlyGhostPos)
+        self.ghostDead = self.checkGhostDead(self.next_pacmanPosition, nearlyGhostPos, self.gameState.getNumAgents() - 1)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
         q_nextState = (next_relativePosition, next_distance, stateOfWalls)
         return q_nextState
+
+    def updatePositionsList(self, next_pacmanPosition):
+        if len(self.positionsList) > 100:
+            self.positionsList.pop(0)
+        self.positionsList.append(next_pacmanPosition)
     
     def checkGhostDead(self, next_pacmanPosition, nearlyGhostPos, numAgents):
         if next_pacmanPosition[0] == nearlyGhostPos[0] and next_pacmanPosition[1] == nearlyGhostPos[1]:
@@ -499,13 +528,29 @@ class QLearningAgent(BustersAgent):
         return next_pacmanPosition
 
 
+    # def getNearlyGhostDistance(self, position, nearlyGhostPos):
+    #     diferenceX =  abs(nearlyGhostPos[0] - position[0])
+    #     diferenceY =  abs(nearlyGhostPos[1] - position[1])
+    #     distance = diferenceX + diferenceY
+    #     return distance
+
     def getNearlyGhostDistance(self, position, nearlyGhostPos):
         diferenceX =  abs(nearlyGhostPos[0] - position[0])
         diferenceY =  abs(nearlyGhostPos[1] - position[1])
         distance = diferenceX + diferenceY
-        return distance
+        # Se discretiza la distancia
+        if distance <= 1:
+            return 0  # Muy cerca
+        elif distance > 1 and distance <=2:
+            return 1  # Cerca
+        elif distance > 2 and distance <=5:
+            return 2  # Media
+        elif distance > 5 and distance <=10:
+            return 3  # Lejos      
+        else:
+            return 4  # Muy lejos
 
-    
+
     def getRelativePosition(self, position, nearlyGhostPos): 
         diferenceX =  nearlyGhostPos[0] - position[0]
         diferenceY =  nearlyGhostPos[1] - position[1]
@@ -548,10 +593,30 @@ class QLearningAgent(BustersAgent):
 
     def calculateReward(self, state, action, nextState):
         reward = 0
-        reward =  state[1] - nextState[1]
+        if nextState[1] == 0:
+            reward += 10
+        elif nextState[1] == 1:
+            reward += 5
+        elif nextState[1] == 1:
+            reward += 1
         # pacmanPosition = list(self.gameState.getPacmanPosition())
         if self.score > 0:
-            reward += self.score
+            reward += 10
         if self.ghostDead:
-            reward += 100
+            reward += 50
+        reward -= self.positionsList.count(self.next_pacmanPosition) * 10
+        self.updatePositionsList(self.next_pacmanPosition)
         return reward
+
+
+#  Estados nuevos
+#     Numero Posibles movimientos
+#     Distancia discretizada
+
+# Recompensa
+#     Posicion ya visitada -> Lista de posiciones visitadas
+
+
+
+# Añadir que la distancia que sea al objetivo mas cercano, dot o fantasma para maximizar el score
+# !!!
