@@ -610,7 +610,9 @@ class QLearningAgent(BustersAgent):
             reward += 100
         # if self.ghostDead:
         #     reward += 50
-        reward -= pow(2, self.positionsList.count(self.next_pacmanPosition))
+        if self.positionsList.count(self.next_pacmanPosition) == 0:
+            reward += 5
+        reward -= self.positionsList.count(self.next_pacmanPosition)
         self.updatePositionsList(self.next_pacmanPosition)
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
@@ -625,5 +627,7 @@ class QLearningAgent(BustersAgent):
 
 
 
-# Añadir que la distancia que sea al objetivo mas cercano, dot o fantasma para maximizar el score
-# !!!
+# AÑADIR QUE EL REFUERZO ESTE SIENDO POSITIVO O NEGATIVO AL ESTADO CON UN VALOR (0,1)
+# AÑADIR AL ESTADO SI ESTA REPITIENDO UN CAMINO MEDIANTE LA LISTA
+# AÑADIR AL ESTADO ULTIMA ACCION REALIZADA
+# aÑADIR UNA DIRECCION RELATIVA DEL SEGUNDO MAS CERCA PARA QUITAR EL ESTADO INACESIBLE ==
