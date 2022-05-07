@@ -298,6 +298,7 @@ class QLearningAgent(BustersAgent):
         self.discount = 0.9
         self.countActions = 0
         self.score = 0
+        self.scoreDiff = 0
         self.positionsList = []
 
 
@@ -453,7 +454,8 @@ class QLearningAgent(BustersAgent):
 
     def updateGameStateInfo(self, state):
         self.gameState = state
-        self.score = self.gameState.getScore() - self.score
+        self.scoreDiff = self.gameState.getScore() - self.score
+        self.score = self.gameState.getScore() 
         self.countActions += 1
 
     # def calculateStateOfWalls(self, pacmanPosition, walls):
@@ -597,15 +599,20 @@ class QLearningAgent(BustersAgent):
             reward += 10
         elif nextState[1] == 1:
             reward += 5
-        elif nextState[1] == 1:
+        elif nextState[1] == 2:
             reward += 1
+        elif nextState[1] == 3:
+            reward -= 5
+        elif nextState[1] == 4:
+            reward -= 10
         # pacmanPosition = list(self.gameState.getPacmanPosition())
-        if self.score > 0:
-            reward += 10
-        if self.ghostDead:
-            reward += 50
-        reward -= self.positionsList.count(self.next_pacmanPosition) * 10
+        if self.scoreDiff > 0:
+            reward += 100
+        # if self.ghostDead:
+        #     reward += 50
+        reward -= pow(2, self.positionsList.count(self.next_pacmanPosition))
         self.updatePositionsList(self.next_pacmanPosition)
+        # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
 
 
