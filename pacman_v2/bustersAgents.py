@@ -309,13 +309,28 @@ class QLearningAgent(BustersAgent):
         self.elapseTimeEnable = elapseTimeEnable
 
 
+    def getNearestFoodDistanceAndPos(self):
+        if(self.gameState.getNumFood() > 0):
+            minDistance = 900000
+            pacmanPosition = self.gameState.getPacmanPosition()
+            for i in range(self.gameState.data.layout.width):
+                for j in range(self.gameState.data.layout.height):
+                    if self.gameState.hasFood(i, j):
+                        foodPosition = i, j
+                        distance = util.manhattanDistance(pacmanPosition, foodPosition)
+                        if distance < minDistance:
+                            minDistance = distance
+                            nearestFoodPos = (i,j)
+            return minDistance, nearestFoodPos
+
+        else:
+            return None, None;
+
     # Establece el objetivo mas cercano a la posicion del pacman en el momento de la llamada
     def getNearlyObjectivePos(self, state):
+        minFoodDistance, nearestFoodPos = self.getNearestFoodDistanceAndPos()
         # nealyGhost = [manhattanDistance, ghostNumber]
-        nearestFoodDistance = state.getDistanceNearestFood()
-        if nearestFoodDistance == None:
-            nearestFoodDistance = 1000
-        nearlyGhost = [nearestFoodDistance, 0]
+        nearlyGhost = [1000, 0]
         livingGhosts = state.getLivingGhosts()
         for i in range(len(state.data.ghostDistances)):
             if livingGhosts[i + 1] and state.data.ghostDistances[i] != None :
@@ -323,8 +338,11 @@ class QLearningAgent(BustersAgent):
                     nearlyGhost = [state.data.ghostDistances[i], i]
         self.currentNearlyGhostIndex = nearlyGhost[1]
         self.nearlyGhostDistance = nearlyGhost[0]
+        if minFoodDistance != None and nearestFoodPos != None:
+            if self.nearlyGhostDistance > minFoodDistance:
+                return nearestFoodPos
         ghostsPositions = state.getGhostPositions()
-        return ghostsPositions[self.currentNearlyGhostIndex]
+        return list(ghostsPositions[self.currentNearlyGhostIndex])
 
 
     def initQtable(self):
@@ -500,8 +518,7 @@ class QLearningAgent(BustersAgent):
         self.next_pacmanPosition = self.getNextPosition(action, pacmanPosition)
         next_distance = self.getNearlyGhostDistance(self.next_pacmanPosition, nearlyGhostPos)
         next_relativePosition = self.getRelativePosition(self.next_pacmanPosition, nearlyGhostPos)
-        self.ghostDead = self.checkGhostDead(self.next_pacmanPosition, nearlyGhostPos, self.gameState.getNumAgents() - 1)
-        stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
+        stateOfWalls = self.calculateStateOfWalls(self.next_pacmanPosition, walls)
         q_nextState = (next_relativePosition, next_distance, stateOfWalls)
         return q_nextState
 
@@ -510,10 +527,6 @@ class QLearningAgent(BustersAgent):
             self.positionsList.pop(0)
         self.positionsList.append(next_pacmanPosition)
     
-    def checkGhostDead(self, next_pacmanPosition, nearlyGhostPos, numAgents):
-        if next_pacmanPosition[0] == nearlyGhostPos[0] and next_pacmanPosition[1] == nearlyGhostPos[1]:
-            return True
-        return False
 
     def getNextPosition(self, action, position):
         next_pacmanPosition = copy.deepcopy(position)
@@ -529,12 +542,6 @@ class QLearningAgent(BustersAgent):
             return next_pacmanPosition
         return next_pacmanPosition
 
-
-    # def getNearlyGhostDistance(self, position, nearlyGhostPos):
-    #     diferenceX =  abs(nearlyGhostPos[0] - position[0])
-    #     diferenceY =  abs(nearlyGhostPos[1] - position[1])
-    #     distance = diferenceX + diferenceY
-    #     return distance
 
     def getNearlyGhostDistance(self, position, nearlyGhostPos):
         diferenceX =  abs(nearlyGhostPos[0] - position[0])
@@ -596,23 +603,23 @@ class QLearningAgent(BustersAgent):
     def calculateReward(self, state, action, nextState):
         reward = 0
         if nextState[1] == 0:
-            reward += 10
+            reward += 20
         elif nextState[1] == 1:
-            reward += 5
+            reward += 10
         elif nextState[1] == 2:
-            reward += 1
+            reward += 5
         elif nextState[1] == 3:
             reward -= 5
         elif nextState[1] == 4:
             reward -= 10
         # pacmanPosition = list(self.gameState.getPacmanPosition())
-        if self.scoreDiff > 0:
+        if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
+            reward += 300
+        if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
             reward += 100
-        # if self.ghostDead:
-        #     reward += 50
         if self.positionsList.count(self.next_pacmanPosition) == 0:
             reward += 5
-        reward -= self.positionsList.count(self.next_pacmanPosition)
+        reward -= pow(2, self.positionsList.count(self.next_pacmanPosition))
         self.updatePositionsList(self.next_pacmanPosition)
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
