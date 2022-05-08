@@ -293,9 +293,9 @@ class QLearningAgent(BustersAgent):
         self.table_file = open('qtable.txt', 'r+')
 #        self.table_file_csv = open("qtable.csv", "r+")        
         self.q_table = self.readQtable()
-        self.epsilon = 0.3
+        self.epsilon = 0.02
         self.alpha = 0.1
-        self.discount = 0.9
+        self.discount = 0.8
         self.countActions = 0
         self.score = 0
         self.scoreDiff = 0
@@ -349,7 +349,7 @@ class QLearningAgent(BustersAgent):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
             # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones)
-            for i in range(9 * 5 * 15):
+            for i in range(8 * 5 * 15):
                 for j in range(4):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
@@ -517,13 +517,13 @@ class QLearningAgent(BustersAgent):
     def calculateMyNextState(self, action, nearlyGhostPos, pacmanPosition, walls):
         self.next_pacmanPosition = self.getNextPosition(action, pacmanPosition)
         next_distance = self.getNearlyGhostDistance(self.next_pacmanPosition, nearlyGhostPos)
-        next_relativePosition = self.getRelativePosition(self.next_pacmanPosition, nearlyGhostPos)
+        next_relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(self.next_pacmanPosition, walls)
         q_nextState = (next_relativePosition, next_distance, stateOfWalls)
         return q_nextState
 
     def updatePositionsList(self, next_pacmanPosition):
-        if len(self.positionsList) > 100:
+        if len(self.positionsList) > 1000:
             self.positionsList.pop(0)
         self.positionsList.append(next_pacmanPosition)
     
@@ -575,15 +575,13 @@ class QLearningAgent(BustersAgent):
                 return 3 #South
             elif diferenceY > 0:
                 return 4 #North
-            elif diferenceY == 0:
-                return 5 #Equals
         elif diferenceX > 0:    
             if diferenceY < 0:
-                return 6 #SouthEast
+                return 5 #SouthEast
             elif diferenceY > 0:
-                return 7 #NorthEast
+                return 6 #NorthEast
             elif diferenceY == 0:
-                return 8 #East
+                return 7 #East
 
     def update(self, state, action, nextState):
         action_column = self.getActionColumn(action)
@@ -603,23 +601,23 @@ class QLearningAgent(BustersAgent):
     def calculateReward(self, state, action, nextState):
         reward = 0
         if nextState[1] == 0:
-            reward += 20
-        elif nextState[1] == 1:
-            reward += 10
-        elif nextState[1] == 2:
             reward += 5
+        elif nextState[1] == 1:
+            reward += 2
+        elif nextState[1] == 2:
+            reward += 1
         elif nextState[1] == 3:
-            reward -= 5
+            reward += 0.5
         elif nextState[1] == 4:
-            reward -= 10
+            reward -= 1
         # pacmanPosition = list(self.gameState.getPacmanPosition())
         if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
-            reward += 300
+            reward += 200
         if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
-            reward += 100
+            reward += 50
         if self.positionsList.count(self.next_pacmanPosition) == 0:
-            reward += 5
-        reward -= pow(2, self.positionsList.count(self.next_pacmanPosition))
+            reward += 0.5
+        reward -= 0.02 * self.positionsList.count(self.next_pacmanPosition)
         self.updatePositionsList(self.next_pacmanPosition)
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
