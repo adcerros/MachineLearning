@@ -293,8 +293,8 @@ class QLearningAgent(BustersAgent):
         self.table_file = open('qtable.txt', 'r+')
 #        self.table_file_csv = open("qtable.csv", "r+")        
         self.q_table = self.readQtable()
-        self.epsilon = 0.1
-        self.alpha = 0.2
+        self.epsilon = 0.05
+        self.alpha = 0.1
         self.discount = 0.9
         self.countActions = 0
         self.score = 0
@@ -591,7 +591,7 @@ class QLearningAgent(BustersAgent):
 
 
     def calculateReward(self, state, action, nextState):
-        reward = 0
+        reward = - 1
         if nextState[1] == 0:
             reward += 5
         elif nextState[1] == 1:
