@@ -293,7 +293,7 @@ class QLearningAgent(BustersAgent):
         self.table_file = open('qtable.txt', 'r+')
 #        self.table_file_csv = open("qtable.csv", "r+")        
         self.q_table = self.readQtable()
-        self.epsilon = 0.05
+        self.epsilon = 0.1
         self.alpha = 0.2
         self.discount = 0.9
         self.countActions = 0
@@ -348,7 +348,7 @@ class QLearningAgent(BustersAgent):
     def initQtable(self):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
-            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones) * 4 (nº veces visitada posicion discretizada)
+            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones) * 4 (direccion Pacman)
             for i in range(8 * 6 * 15 * 4):
                 for j in range(4):
                     self.table_file.write(str(0)+" ")
@@ -376,14 +376,6 @@ class QLearningAgent(BustersAgent):
                 self.table_file.write(str(item)+" ")
             self.table_file.write("\n")
 
-#         self.table_file_csv.seek(0)
-#         self.table_file_csv.truncate()
-#         for line in self.q_table:
-#             for item in line[:-1]:
-#                 self.table_file_csv.write(str(item)+", ")
-#             self.table_file_csv.write(str(line[-1]))                
-#             self.table_file_csv.write("\n")
-
             
     def printQtable(self):
         "Print qtable"
@@ -396,7 +388,7 @@ class QLearningAgent(BustersAgent):
         self.writeQtable()
 
 
-    # state = (relativePosition, distance, wallsState, repeatedPosition)
+    # state = (relativePosition, distance, wallsState, Pacman_direction)
     def computePosition(self, state):
         return (state[0] * (6 * 15 * 4)) + (state[1] * 15 * 4) + (state[2] * 4) + state[3]
 
@@ -421,6 +413,8 @@ class QLearningAgent(BustersAgent):
             return 2
         elif action == Directions.WEST:
             return 3
+        else: 
+            return 0
 
 
 
@@ -476,20 +470,6 @@ class QLearningAgent(BustersAgent):
         self.score = self.gameState.getScore() 
         self.countActions += 1
 
-    # def calculateStateOfWalls(self, pacmanPosition, walls):
-    #     # estado de los muros binario de 4 bits cada bit indica 0 no hay muro 1 hay muro
-    #     # Ej: 0001 = muro norte, sur, este = false ;  muro oeste = true;
-    #     stateOfWalls = 0
-    #     if walls[pacmanPosition[0] + 1][pacmanPosition[1]] == True:
-    #         stateOfWalls += 8
-    #     if walls[pacmanPosition[0] - 1][pacmanPosition[1]] == True:
-    #         stateOfWalls += 4
-    #     if walls[pacmanPosition[0]][pacmanPosition[1] + 1] == True:
-    #         stateOfWalls += 2
-    #     if walls[pacmanPosition[0]][pacmanPosition[1] + 1] == True:
-    #         stateOfWalls += 1
-    #     return stateOfWalls
-
 
     def calculateStateOfWalls(self, pacmanPosition, walls):
         # estado de los muros binario de 4 bits cada bit indica 0 no hay muro 1 hay muro
@@ -510,13 +490,13 @@ class QLearningAgent(BustersAgent):
         distance = self.getNearlyGhostDistance(pacmanPosition, nearlyGhostPos)
         relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
-        repeated = self.checkRepeated(pacmanPosition)
+        direction = self.getActionColumn(self.gameState.data.agentStates[0].getDirection())
         self.updatePositionsList(pacmanPosition)
-        q_currentState = (relativePosition, distance, stateOfWalls, repeated)
+        q_currentState = (relativePosition, distance, stateOfWalls, direction)
         return q_currentState
 
-    # Retorna: si esta repetido mas de 3 veces retorna 4, sino retorna el numero de veces repetido
-    def checkRepeated(self, pacmanPosition):
+    # Retorna: si esta repetido mas de 2 veces retorna 3, sino retorna el numero de veces repetido
+    def calculateDirection(self, pacmanPosition):
         timesRepeated = self.positionsList.count(pacmanPosition)
         if timesRepeated > 2:
             return 3
@@ -528,8 +508,8 @@ class QLearningAgent(BustersAgent):
         next_distance = self.getNearlyGhostDistance(self.next_pacmanPosition, nearlyGhostPos)
         next_relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(self.next_pacmanPosition, walls)
-        repeated = self.checkRepeated(self.next_pacmanPosition)
-        q_nextState = (next_relativePosition, next_distance, stateOfWalls, repeated)
+        direction = self.getActionColumn(action)
+        q_nextState = (next_relativePosition, next_distance, stateOfWalls, direction)
         return q_nextState
 
     def updatePositionsList(self, next_pacmanPosition):
@@ -626,9 +606,9 @@ class QLearningAgent(BustersAgent):
             reward -= 2
         # pacmanPosition = list(self.gameState.getPacmanPosition())
         if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
-            reward += 400
-        if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
             reward += 200
+        if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
+            reward += 400
         if self.positionsList.count(self.next_pacmanPosition) > 2:
             reward -= 0.5 * self.positionsList.count(self.next_pacmanPosition) - 1
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
