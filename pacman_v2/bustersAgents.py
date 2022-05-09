@@ -591,7 +591,7 @@ class QLearningAgent(BustersAgent):
 
 
     def calculateReward(self, state, action, nextState):
-        reward = -1
+        reward = 0
         if nextState[1] == 0:
             reward += 5
         elif nextState[1] == 1:
