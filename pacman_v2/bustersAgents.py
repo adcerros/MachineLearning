@@ -293,9 +293,9 @@ class QLearningAgent(BustersAgent):
         self.table_file = open('qtable.txt', 'r+')
 #        self.table_file_csv = open("qtable.csv", "r+")        
         self.q_table = self.readQtable()
-        self.epsilon = 0.02
-        self.alpha = 0.1
-        self.discount = 0.8
+        self.epsilon = 0.05
+        self.alpha = 0.2
+        self.discount = 0.9
         self.countActions = 0
         self.score = 0
         self.scoreDiff = 0
@@ -348,8 +348,8 @@ class QLearningAgent(BustersAgent):
     def initQtable(self):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
-            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones)
-            for i in range(8 * 5 * 15):
+            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones) * 4 (nº veces visitada posicion discretizada)
+            for i in range(8 * 6 * 15 * 4):
                 for j in range(4):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
@@ -396,9 +396,9 @@ class QLearningAgent(BustersAgent):
         self.writeQtable()
 
 
-    # state = (relativePosition, distance, wallsState)
+    # state = (relativePosition, distance, wallsState, repeatedPosition)
     def computePosition(self, state):
-        return (state[0] * (5 * 15)) + (state[1] * 15) + state[2]
+        return (state[0] * (6 * 15 * 4)) + (state[1] * 15 * 4) + (state[2] * 4) + state[3]
 
 
     def getQValue(self, state, action):
@@ -510,8 +510,17 @@ class QLearningAgent(BustersAgent):
         distance = self.getNearlyGhostDistance(pacmanPosition, nearlyGhostPos)
         relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
-        q_currentState = (relativePosition, distance, stateOfWalls)
+        repeated = self.checkRepeated(pacmanPosition)
+        self.updatePositionsList(pacmanPosition)
+        q_currentState = (relativePosition, distance, stateOfWalls, repeated)
         return q_currentState
+
+    # Retorna: si esta repetido mas de 3 veces retorna 4, sino retorna el numero de veces repetido
+    def checkRepeated(self, pacmanPosition):
+        timesRepeated = self.positionsList.count(pacmanPosition)
+        if timesRepeated > 2:
+            return 3
+        return timesRepeated
 
     # Construccion del siguiente estado en forma de tupla
     def calculateMyNextState(self, action, nearlyGhostPos, pacmanPosition, walls):
@@ -519,7 +528,8 @@ class QLearningAgent(BustersAgent):
         next_distance = self.getNearlyGhostDistance(self.next_pacmanPosition, nearlyGhostPos)
         next_relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(self.next_pacmanPosition, walls)
-        q_nextState = (next_relativePosition, next_distance, stateOfWalls)
+        repeated = self.checkRepeated(self.next_pacmanPosition)
+        q_nextState = (next_relativePosition, next_distance, stateOfWalls, repeated)
         return q_nextState
 
     def updatePositionsList(self, next_pacmanPosition):
@@ -556,8 +566,10 @@ class QLearningAgent(BustersAgent):
             return 2  # Media
         elif distance > 5 and distance <=10:
             return 3  # Lejos      
-        else:
+        elif distance > 10 and distance <=20:
             return 4  # Muy lejos
+        else:
+            return 5 # Extremadamente lejos
 
 
     def getRelativePosition(self, position, nearlyGhostPos): 
@@ -610,28 +622,15 @@ class QLearningAgent(BustersAgent):
             reward += 0.5
         elif nextState[1] == 4:
             reward -= 1
+        elif nextState[1] == 5:
+            reward -= 2
         # pacmanPosition = list(self.gameState.getPacmanPosition())
         if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
             reward += 400
         if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
             reward += 200
-        reward -= 0.2 * self.positionsList.count(self.next_pacmanPosition) - 1
-        self.updatePositionsList(self.next_pacmanPosition)
+        if self.positionsList.count(self.next_pacmanPosition) > 2:
+            reward -= 0.5 * self.positionsList.count(self.next_pacmanPosition) - 1
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
 
-
-#  Estados nuevos
-#     Posicion repetida!!!!!
-#     Numero Posibles movimientos
-#     Distancia discretizada
-
-# Recompensa
-#     Posicion ya visitada -> Lista de posiciones visitadas
-
-
-
-# AÑADIR QUE EL REFUERZO ESTE SIENDO POSITIVO O NEGATIVO AL ESTADO CON UN VALOR (0,1)
-# AÑADIR AL ESTADO SI ESTA REPITIENDO UN CAMINO MEDIANTE LA LISTA
-# AÑADIR AL ESTADO ULTIMA ACCION REALIZADA
-# aÑADIR UNA DIRECCION RELATIVA DEL SEGUNDO MAS CERCA PARA QUITAR EL ESTADO INACESIBLE ==
