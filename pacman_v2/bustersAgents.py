@@ -591,7 +591,7 @@ class QLearningAgent(BustersAgent):
 
 
     def calculateReward(self, state, action, nextState):
-        reward = 0
+        reward = -1
         if nextState[1] == 0:
             reward += 5
         elif nextState[1] == 1:
@@ -609,8 +609,9 @@ class QLearningAgent(BustersAgent):
             reward += 200
         if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
             reward += 400
-        if self.positionsList.count(self.next_pacmanPosition) > 2:
-            reward -= 0.5 * self.positionsList.count(self.next_pacmanPosition) - 1
+        # Si es menos no se da refuerzo negativo ya que es el numero minimo de veces que se pasa por un cruce de 4 direcciones
+        if self.positionsList.count(self.next_pacmanPosition) > 3:
+            reward -= 0.5 * self.positionsList.count(self.next_pacmanPosition)
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
 
