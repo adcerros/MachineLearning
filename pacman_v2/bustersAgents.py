@@ -612,18 +612,17 @@ class QLearningAgent(BustersAgent):
             reward -= 1
         # pacmanPosition = list(self.gameState.getPacmanPosition())
         if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
-            reward += 200
+            reward += 400
         if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
-            reward += 50
-        if self.positionsList.count(self.next_pacmanPosition) == 0:
-            reward += 0.5
-        reward -= 0.02 * self.positionsList.count(self.next_pacmanPosition)
+            reward += 200
+        reward -= 0.2 * self.positionsList.count(self.next_pacmanPosition) - 1
         self.updatePositionsList(self.next_pacmanPosition)
         # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
 
 
 #  Estados nuevos
+#     Posicion repetida!!!!!
 #     Numero Posibles movimientos
 #     Distancia discretizada
 
