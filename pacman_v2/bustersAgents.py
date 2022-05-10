@@ -287,8 +287,6 @@ class QLearningAgent(BustersAgent):
     def registerInitialState(self, gameState):
         BustersAgent.registerInitialState(self, gameState)
         self.distancer = Distancer(gameState.data.layout, False)
-        self.maxDistance = gameState.data.layout.width + gameState.data.layout.height - 2
-        self.maxAgents = 3
         self.initQtable()
         self.table_file = open('qtable.txt', 'r+')
 #        self.table_file_csv = open("qtable.csv", "r+")        
