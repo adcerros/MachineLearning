@@ -296,7 +296,6 @@ class QLearningAgent(BustersAgent):
         self.epsilon = 0.05
         self.alpha = 0.2
         self.discount = 0.9
-        self.countActions = 0
         self.positionsList = []
 
 
@@ -442,29 +441,33 @@ class QLearningAgent(BustersAgent):
         action = None
         self.legalActions = state.getLegalPacmanActions()
         self.legalActions = self.legalActions[0: len(self.legalActions) - 1]
+        self.updateGameStateInfo(state)
         if len(self.legalActions) == 0:
              return action
         flip = util.flipCoin(self.epsilon)
         if flip:
             action = random.choice(self.legalActions)
+            action, q_currentState, q_nextState = self.createNewStates(state, action)
+            self.update(q_currentState, action, q_nextState)
             return action
-        self.updateGameStateInfo(state)
-        action, q_currentState, q_nextState = self.createNewStates(state)
-        self.update(q_currentState, action, q_nextState)
-        return action
+        else:
+            action, q_currentState, q_nextState = self.createNewStates(state)
+            self.update(q_currentState, action, q_nextState)
+            return action
 
-    def createNewStates(self, state):
+
+    def createNewStates(self, state, action=None):
         nearlyGhostPos = self.getNearlyObjectivePos(state)
         pacmanPosition = list(state.getPacmanPosition())
         walls = state.getWalls()
         q_currentState = self.calculateMyCurrentState(nearlyGhostPos, pacmanPosition, walls)
-        action = self.getPolicy(q_currentState)
+        if action == None:
+            action = self.getPolicy(q_currentState)
         q_nextState = self.calculateMyNextState(action, nearlyGhostPos, pacmanPosition, walls)
-        return action,q_currentState,q_nextState
+        return action, q_currentState, q_nextState
 
     def updateGameStateInfo(self, state):
         self.gameState = state
-        self.countActions += 1
 
 
     def calculateStateOfWalls(self, pacmanPosition, walls):
@@ -574,7 +577,7 @@ class QLearningAgent(BustersAgent):
     def update(self, state, action, nextState):
         action_column = self.getActionColumn(action)
         position = self.computePosition(state)
-        self.reward = self.calculateReward(state, action, nextState)
+        self.reward = self.calculateReward(nextState)
         self.q_table[position][action_column] = (1 - self.alpha) * self.getQValue(state, action) + self.alpha * (self.reward + self.discount * self.getQValue(nextState, self.getPolicy(nextState)))
         
         # TRACE for updated q-table. Comment the following lines if you do not want to see that trace
@@ -586,7 +589,7 @@ class QLearningAgent(BustersAgent):
         return self.computeActionFromQValues(state)
 
 
-    def calculateReward(self, state, action, nextState):
+    def calculateReward(self, nextState):
         reward = - 1
         if nextState[1] == 0:
             reward += 5
@@ -600,7 +603,6 @@ class QLearningAgent(BustersAgent):
             reward -= 1
         elif nextState[1] == 5:
             reward -= 2
-        # pacmanPosition = list(self.gameState.getPacmanPosition())
         if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
             reward += 200
         if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
@@ -608,6 +610,5 @@ class QLearningAgent(BustersAgent):
         # Si es menos no se da refuerzo negativo ya que es el numero minimo de veces que se pasa por un cruce de 4 direcciones
         if self.positionsList.count(self.next_pacmanPosition) > 3:
             reward -= 0.5 * self.positionsList.count(self.next_pacmanPosition)
-        # print("Resultado: " + str(self.positionsList.count(self.next_pacmanPosition)) + "\n")
         return reward
 
