@@ -477,7 +477,7 @@ class QLearningAgent(BustersAgent):
             stateOfWalls += 4
         if walls[pacmanPosition[0]][pacmanPosition[1] + 1] == True:
             stateOfWalls += 2
-        if walls[pacmanPosition[0]][pacmanPosition[1] + 1] == True:
+        if walls[pacmanPosition[0]][pacmanPosition[1] - 1] == True:
             stateOfWalls += 1
         return stateOfWalls
 
