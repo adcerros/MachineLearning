@@ -297,8 +297,6 @@ class QLearningAgent(BustersAgent):
         self.alpha = 0.1
         self.discount = 0.9
         self.countActions = 0
-        self.score = 0
-        self.scoreDiff = 0
         self.positionsList = []
 
 
@@ -466,8 +464,6 @@ class QLearningAgent(BustersAgent):
 
     def updateGameStateInfo(self, state):
         self.gameState = state
-        self.scoreDiff = self.gameState.getScore() - self.score
-        self.score = self.gameState.getScore() 
         self.countActions += 1
 
 
