@@ -294,7 +294,7 @@ class QLearningAgent(BustersAgent):
 #        self.table_file_csv = open("qtable.csv", "r+")        
         self.q_table = self.readQtable()
         self.epsilon = 0.05
-        self.alpha = 0.1
+        self.alpha = 0.2
         self.discount = 0.9
         self.countActions = 0
         self.positionsList = []
