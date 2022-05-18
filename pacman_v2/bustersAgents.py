@@ -293,8 +293,9 @@ class QLearningAgent(BustersAgent):
         self.q_table = self.readQtable()
         self.epsilon = 0.05
         self.alpha = 0.2
-        self.discount = 0.9
+        self.discount = 0.99
         self.positionsList = []
+        self.walls = gameState.getWalls()
 
 
     def __init__( self, index = 0, inference = "ExactInference", ghostAgents = None, observeEnable = True, elapseTimeEnable = True):
@@ -303,48 +304,67 @@ class QLearningAgent(BustersAgent):
         self.observeEnable = observeEnable
         self.elapseTimeEnable = elapseTimeEnable
 
+    def getRealDistance(self, pacmanPosition, nearlyGhostPos):
+            # Inicializacion de A*
+            openList = []
+            closedList = []
+            initial = [pacmanPosition, 0, 100]
+            openList.append(initial)
+            while len(openList) > 0:
+                currentState = openList.pop(0)
+                if currentState[0] == nearlyGhostPos:
+                    return currentState[1]
+                else:
+                    self.expandStates(self.walls, openList, closedList, currentState, nearlyGhostPos)
+                    closedList.append(currentState[0])
+            print("No solution problem !!!!")
+            return 0
 
-    def getNearestFoodDistanceAndPos(self):
-        if(self.gameState.getNumFood() > 0):
-            minDistance = 900000
-            pacmanPosition = self.gameState.getPacmanPosition()
-            for i in range(self.gameState.data.layout.width):
-                for j in range(self.gameState.data.layout.height):
-                    if self.gameState.hasFood(i, j):
-                        foodPosition = i, j
-                        distance = util.manhattanDistance(pacmanPosition, foodPosition)
-                        if distance < minDistance:
-                            minDistance = distance
-                            nearestFoodPos = (i,j)
-            return minDistance, nearestFoodPos
+    # Se generan las posibles acciones y los nuevos estados
+    def expandStates(self, walls, openList, closedList, currentState, nearlyGhostPos):
+        newStates = []
+        newStates.append([(currentState[0][0], currentState[0][1] + 1), currentState[1] + 1])
+        newStates.append([(currentState[0][0], currentState[0][1] - 1), currentState[1] + 1])
+        newStates.append([(currentState[0][0] - 1, currentState[0][1]), currentState[1] + 1])
+        newStates.append([(currentState[0][0] + 1, currentState[0][1]),  currentState[1] + 1])
+        for i in range(4):
+            currentNewState = newStates.pop(0)
+            # Si el nuevo estado no se encuentra repetido
+            if walls[currentNewState[0][0]][currentNewState[0][1]] == False and currentNewState not in openList and currentNewState[0] not in closedList:
+                self.insertNewState(openList, currentNewState, nearlyGhostPos)
 
-        else:
-            return None, None;
+    # Se inserta el nuevo estado en la lista abierta en orden segun el valor de su funcion G
+    def insertNewState(self, openList, currentNewState, nearlyGhostPos):
+        # funcG = g(x) + h(x) donde el coste es el numero de pasos del camino y la funcion heuristica se basa en la distancia de Manhattan
+        funcG = (abs(nearlyGhostPos[0] - currentNewState[0][0]) + abs(nearlyGhostPos[1] - currentNewState[0][1]) + currentNewState[1])
+        currentNewState.append(funcG)
+        for j in range(len(openList)):
+            if (funcG <= openList[j][2]):
+                openList.insert(j, currentNewState)
+                return
+        openList.append(currentNewState)
+
 
     # Establece el objetivo mas cercano a la posicion del pacman en el momento de la llamada
-    def getNearlyObjectivePos(self, state):
-        minFoodDistance, nearestFoodPos = self.getNearestFoodDistanceAndPos()
+    def getNearlyGhostPos(self):
         # nealyGhost = [manhattanDistance, ghostNumber]
         nearlyGhost = [1000, 0]
-        livingGhosts = state.getLivingGhosts()
-        for i in range(len(state.data.ghostDistances)):
-            if livingGhosts[i + 1] and state.data.ghostDistances[i] != None :
-                if state.data.ghostDistances[i] < nearlyGhost[0]:
-                    nearlyGhost = [state.data.ghostDistances[i], i]
+        livingGhosts = self.gameState.getLivingGhosts()
+        ghostDistances = self.gameState.data.ghostDistances
+        for i in range(len(ghostDistances)):
+            if livingGhosts[i + 1] and ghostDistances[i] != None :
+                if ghostDistances[i] < nearlyGhost[0]:
+                    nearlyGhost = [ghostDistances[i], i]
         self.currentNearlyGhostIndex = nearlyGhost[1]
-        self.nearlyGhostDistance = nearlyGhost[0]
-        if minFoodDistance != None and nearestFoodPos != None:
-            if self.nearlyGhostDistance > minFoodDistance:
-                return nearestFoodPos
-        ghostsPositions = state.getGhostPositions()
-        return list(ghostsPositions[self.currentNearlyGhostIndex])
+        ghostsPositions = self.gameState.getGhostPositions()
+        return ghostsPositions[self.currentNearlyGhostIndex]
 
 
     def initQtable(self):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
             # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones) * 4 (direccion Pacman)
-            for i in range(8 * 6 * 15 * 4):
+            for i in range(8 * 10 * 15 * 4):
                 for j in range(4):
                     self.table_file.write(str(0)+" ")
                 self.table_file.write("\n")
@@ -385,7 +405,7 @@ class QLearningAgent(BustersAgent):
 
     # state = (relativePosition, distance, wallsState, Pacman_direction)
     def computePosition(self, state):
-        return (state[0] * (6 * 15 * 4)) + (state[1] * 15 * 4) + (state[2] * 4) + state[3]
+        return (state[0] * (10 * 15 * 4)) + (state[1] * 15 * 4) + (state[2] * 4) + state[3]
 
 
     def getQValue(self, state, action):
@@ -455,7 +475,7 @@ class QLearningAgent(BustersAgent):
 
 
     def createNewStates(self, state, action=None):
-        nearlyGhostPos = self.getNearlyObjectivePos(state)
+        nearlyGhostPos = self.getNearlyGhostPos()
         pacmanPosition = list(state.getPacmanPosition())
         walls = state.getWalls()
         q_currentState = self.calculateMyCurrentState(nearlyGhostPos, pacmanPosition, walls)
@@ -484,7 +504,7 @@ class QLearningAgent(BustersAgent):
 
     # Construccion del estado actual en forma de tupla  
     def calculateMyCurrentState(self, nearlyGhostPos, pacmanPosition, walls):
-        distance = self.getNearlyGhostDistance(pacmanPosition, nearlyGhostPos)
+        distance = self.discretizeDistance(self.getRealDistance(pacmanPosition, nearlyGhostPos))
         relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
         direction = self.getActionColumn(self.gameState.data.agentStates[0].getDirection())
@@ -502,7 +522,7 @@ class QLearningAgent(BustersAgent):
     # Construccion del siguiente estado en forma de tupla
     def calculateMyNextState(self, action, nearlyGhostPos, pacmanPosition, walls):
         self.next_pacmanPosition = self.getNextPosition(action, pacmanPosition)
-        next_distance = self.getNearlyGhostDistance(self.next_pacmanPosition, nearlyGhostPos)
+        next_distance = self.discretizeDistance(self.getRealDistance(self.next_pacmanPosition, nearlyGhostPos))
         next_relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(self.next_pacmanPosition, walls)
         direction = self.getActionColumn(action)
@@ -530,23 +550,28 @@ class QLearningAgent(BustersAgent):
         return next_pacmanPosition
 
 
-    def getNearlyGhostDistance(self, position, nearlyGhostPos):
-        diferenceX =  abs(nearlyGhostPos[0] - position[0])
-        diferenceY =  abs(nearlyGhostPos[1] - position[1])
-        distance = diferenceX + diferenceY
+    def discretizeDistance(self, distance):
         # Se discretiza la distancia
         if distance <= 1:
-            return 0  # Muy cerca
+            return 0  
         elif distance > 1 and distance <=2:
-            return 1  # Cerca
-        elif distance > 2 and distance <=5:
-            return 2  # Media
-        elif distance > 5 and distance <=10:
-            return 3  # Lejos      
-        elif distance > 10 and distance <=20:
-            return 4  # Muy lejos
+            return 1  
+        elif distance > 2 and distance <=4:
+            return 2 
+        elif distance > 4 and distance <=6:
+            return 3  
+        elif distance > 6 and distance <=8:
+            return 4 
+        elif distance > 8 and distance <=10:
+            return 5 
+        elif distance > 10 and distance <=13:
+            return 6 
+        elif distance > 13 and distance <=16:
+            return 7 
+        elif distance > 16 and distance <=20:
+            return 8  
         else:
-            return 5 # Extremadamente lejos
+            return 9 
 
 
     def getRelativePosition(self, position, nearlyGhostPos): 
@@ -590,23 +615,29 @@ class QLearningAgent(BustersAgent):
     def calculateReward(self, nextState):
         reward = - 1
         if nextState[1] == 0:
-            reward += 5
+            reward += 20
         elif nextState[1] == 1:
-            reward += 2
+            reward += 10
         elif nextState[1] == 2:
-            reward += 1
+            reward += 5
         elif nextState[1] == 3:
-            reward += 0.5
+            reward += 2
         elif nextState[1] == 4:
             reward -= 1
         elif nextState[1] == 5:
             reward -= 2
-        if self.next_pacmanPosition == self.getNearlyObjectivePos(self.gameState):
-            reward += 200
-        if self.gameState.hasFood(self.next_pacmanPosition[0], self.next_pacmanPosition[1]):
-            reward += 400
-        # Si es menos no se da refuerzo negativo ya que es el numero minimo de veces que se pasa por un cruce de 4 direcciones
-        if self.positionsList.count(self.next_pacmanPosition) > 3:
-            reward -= 0.5 * self.positionsList.count(self.next_pacmanPosition)
+        elif nextState[1] == 6:
+            reward -= 5
+        elif nextState[1] == 7:
+            reward -= 10
+        elif nextState[1] == 8:
+            reward -= 15
+        elif nextState[1] == 9:
+            reward -= 20
+        if self.next_pacmanPosition == self.getNearlyGhostPos():
+            reward += 300
+        # # Si es menos no se da refuerzo negativo ya que es el numero minimo de veces que se pasa por un cruce de 4 direcciones
+        # if self.positionsList.count(self.next_pacmanPosition) > 3:
+        reward -= 5 * self.positionsList.count(self.next_pacmanPosition)
         return reward
 
