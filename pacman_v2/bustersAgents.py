@@ -363,7 +363,7 @@ class QLearningAgent(BustersAgent):
     def initQtable(self):
         if not exists('./qtable.txt'):
             self.table_file = open('qtable.txt', 'w+') 
-            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones) * 4 (direccion Pacman)
+            # Numero de posiciones realtivas * distancia maxima * numero maximo fantasmas * numero de estados de los muros (no se puede alcanzar el estado rodeado por muros en las 4 direcciones)
             for i in range(8 * 10 * 15 * 4):
                 for j in range(4):
                     self.table_file.write(str(0)+" ")
@@ -507,8 +507,8 @@ class QLearningAgent(BustersAgent):
         distance = self.discretizeDistance(self.getRealDistance(pacmanPosition, nearlyGhostPos))
         relativePosition = self.getRelativePosition(pacmanPosition, nearlyGhostPos)
         stateOfWalls = self.calculateStateOfWalls(pacmanPosition, walls)
-        direction = self.getActionColumn(self.gameState.data.agentStates[0].getDirection())
         self.updatePositionsList(pacmanPosition)
+        direction = self.getActionColumn(self.gameState.data.agentStates[0].getDirection())
         q_currentState = (relativePosition, distance, stateOfWalls, direction)
         return q_currentState
 
